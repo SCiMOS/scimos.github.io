@@ -3,11 +3,11 @@
 Gem::Specification.new do |spec|
   spec.name          = "jekyll-theme-satellite"
   spec.version       = "1.4.0"
-  spec.authors       = ["Yankos"]
-  spec.email         = ["byanko55@gmail.com"]
+  spec.authors       = ["veeYceeY"]
+  spec.email         = ["veeyceey@gmail.com"]
 
-  spec.summary       = "Satellite - Jekyll blog theme"
-  spec.homepage      = "https://github.com/byanko55/jekyll-theme-satellite"
+  spec.summary       = "Theme for personal blog"
+  spec.homepage      = "https://github.com/scimos/scimos.com"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0").select {
@@ -21,5 +21,4 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "jekyll-feed", "~> 0.12"
   spec.add_runtime_dependency "jekyll-sitemap", "~> 1.3"
   spec.add_runtime_dependency "jekyll-seo-tag", "~> 2.6"
-  spec.add_runtime_dependency "jekyll-loading-lazy", "~> 0.1.1"
-end
+  spec.add_runtime_dependency "jekyll-loading-lazy", "~> 0.1.1"pwd
