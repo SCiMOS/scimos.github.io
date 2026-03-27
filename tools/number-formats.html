@@ -1,0 +1,658 @@
+---
+layout: default
+title: Number Format Converter
+permalink: /tools/number-formats/
+---
+
+<div class="tool-page">
+
+  <!-- ── Header ── -->
+  <div class="tool-hero">
+    <div class="cmd-bar">
+      <span class="prompt-g">user@gpu-node</span><span class="ps">:</span><span class="pp">~/tools</span><span class="pd">$</span>
+      <span class="cmd-text"> ./number-formats --interactive</span>
+    </div>
+    <h1>Number Format Converter</h1>
+    <p>Edit any field — all others update instantly. Click individual bits to toggle them.<br>
+       All representations share the same 32-bit pattern.</p>
+  </div>
+
+  <!-- ── Presets ── -->
+  <div class="presets-label">$ quick presets</div>
+  <div class="presets-row" id="presets"></div>
+
+  <!-- ── 32-bit visualizer ── -->
+  <div class="bits-section">
+    <div class="bits-section-header">
+      <span>32-bit pattern &nbsp;·&nbsp; click any bit to toggle</span>
+      <span id="bits-hex-label" style="color:#62de61;letter-spacing:.1em">0x00000000</span>
+    </div>
+    <div class="bit-grid" id="bit-grid"></div>
+    <div class="bit-annotations">
+      <div class="bit-ann ann-sign">S<br>31</div>
+      <div class="bit-ann ann-exp">── exponent · bits 30–23 ──</div>
+      <div class="bit-ann ann-mant">── mantissa / significand · bits 22–0 ──</div>
+    </div>
+  </div>
+
+  <!-- ── Integer formats ── -->
+  <div class="fmt-group">
+    <div class="fmt-group-label">Integer</div>
+    <div class="fmt-cards">
+
+      <div class="fmt-card" id="card-i32">
+        <div class="fmt-card-header">
+          <span class="fmt-badge b-int">INT</span>
+          <span class="fmt-card-name">Signed Int32</span>
+          <span class="fmt-card-range">±2³¹</span>
+        </div>
+        <div class="fmt-input-wrap">
+          <input class="fmt-input" id="i32" spellcheck="false" autocomplete="off" placeholder="0">
+        </div>
+        <div class="fmt-meta">32-bit two's complement</div>
+      </div>
+
+      <div class="fmt-card" id="card-u32">
+        <div class="fmt-card-header">
+          <span class="fmt-badge b-int">UINT</span>
+          <span class="fmt-card-name">Unsigned Int32</span>
+          <span class="fmt-card-range">0 – 2³²-1</span>
+        </div>
+        <div class="fmt-input-wrap">
+          <input class="fmt-input" id="u32" spellcheck="false" autocomplete="off" placeholder="0">
+        </div>
+        <div class="fmt-meta">32-bit unsigned</div>
+      </div>
+
+      <div class="fmt-card" id="card-hex">
+        <div class="fmt-card-header">
+          <span class="fmt-badge b-int">HEX</span>
+          <span class="fmt-card-name">Hexadecimal</span>
+          <span class="fmt-card-range">8 digits</span>
+        </div>
+        <div class="fmt-input-wrap">
+          <input class="fmt-input" id="hex" spellcheck="false" autocomplete="off"
+                 placeholder="00000000" style="text-transform:uppercase">
+        </div>
+        <div class="fmt-meta">Base 16 &nbsp;·&nbsp; prefix <span>0x</span> optional</div>
+      </div>
+
+      <div class="fmt-card" id="card-oct">
+        <div class="fmt-card-header">
+          <span class="fmt-badge b-int">OCT</span>
+          <span class="fmt-card-name">Octal</span>
+          <span class="fmt-card-range">11 digits</span>
+        </div>
+        <div class="fmt-input-wrap">
+          <input class="fmt-input" id="oct" spellcheck="false" autocomplete="off" placeholder="00000000000">
+        </div>
+        <div class="fmt-meta">Base 8</div>
+      </div>
+
+      <div class="fmt-card" id="card-bin" style="grid-column:span 2">
+        <div class="fmt-card-header">
+          <span class="fmt-badge b-int">BIN</span>
+          <span class="fmt-card-name">Binary</span>
+          <span class="fmt-card-range">32 bits</span>
+        </div>
+        <div class="fmt-input-wrap">
+          <input class="fmt-input" id="bin" spellcheck="false" autocomplete="off"
+                 placeholder="0000 0000 0000 0000 0000 0000 0000 0000"
+                 style="letter-spacing:.08em">
+        </div>
+        <div class="fmt-meta">Base 2 &nbsp;·&nbsp; spaces optional</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Fixed-point ── -->
+  <div class="fmt-group">
+    <div class="fmt-group-label">Fixed-Point</div>
+    <div class="fmt-cards">
+
+      <div class="fmt-card" id="card-q1616">
+        <div class="fmt-card-header">
+          <span class="fmt-badge b-fixed">FIXED</span>
+          <span class="fmt-card-name">Q16.16</span>
+          <span class="fmt-card-range">32-bit</span>
+        </div>
+        <div class="fmt-input-wrap">
+          <input class="fmt-input" id="q1616" spellcheck="false" autocomplete="off" placeholder="0.000000">
+        </div>
+        <div class="fmt-meta">16 integer · 16 fractional bits<br>
+          range <span>±32768</span> · resolution <span>1/65536 ≈ 1.5e-5</span></div>
+      </div>
+
+      <div class="fmt-card" id="card-q88">
+        <div class="fmt-card-header">
+          <span class="fmt-badge b-fixed">FIXED</span>
+          <span class="fmt-card-name">Q8.8</span>
+          <span class="fmt-card-range">16-bit</span>
+        </div>
+        <div class="fmt-input-wrap">
+          <input class="fmt-input" id="q88" spellcheck="false" autocomplete="off" placeholder="0.0000">
+        </div>
+        <div class="fmt-meta">8 integer · 8 fractional bits (low 16)<br>
+          range <span>±128</span> · resolution <span>1/256 ≈ 0.0039</span></div>
+      </div>
+
+      <div class="fmt-card" id="card-q248">
+        <div class="fmt-card-header">
+          <span class="fmt-badge b-fixed">FIXED</span>
+          <span class="fmt-card-name">Q24.8</span>
+          <span class="fmt-card-range">32-bit</span>
+        </div>
+        <div class="fmt-input-wrap">
+          <input class="fmt-input" id="q248" spellcheck="false" autocomplete="off" placeholder="0.0000">
+        </div>
+        <div class="fmt-meta">24 integer · 8 fractional bits<br>
+          range <span>±8388608</span> · resolution <span>1/256</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Floating-point ── -->
+  <div class="fmt-group">
+    <div class="fmt-group-label">Floating-Point (IEEE 754)</div>
+    <div class="fmt-cards fmt-cards--float">
+
+      <!-- Float32 — wide card with full breakdown -->
+      <div class="fmt-card" id="card-f32">
+        <div class="fmt-card-header">
+          <span class="fmt-badge b-float">FLOAT32</span>
+          <span class="fmt-card-name">Single Precision</span>
+          <span class="fmt-card-range">~±3.4e38</span>
+        </div>
+        <div class="fmt-input-wrap">
+          <input class="fmt-input" id="f32" spellcheck="false" autocomplete="off" placeholder="0">
+        </div>
+        <div class="float-breakdown">
+          <div class="fb-bits-row" id="f32-bits"></div>
+          <div class="fb-fields">
+            <div class="fb-field">
+              <div class="fbl">Sign</div>
+              <div class="fbv s" id="f32-sign-v">+1</div>
+            </div>
+            <div class="fb-field">
+              <div class="fbl">Exponent</div>
+              <div class="fbv e" id="f32-exp-v">0 → 2⁻¹²⁷</div>
+            </div>
+            <div class="fb-field">
+              <div class="fbl">Mantissa</div>
+              <div class="fbv m" id="f32-mant-v">1.0</div>
+            </div>
+          </div>
+        </div>
+        <div class="fmt-meta">1 sign · 8 exp · 23 mantissa &nbsp;·&nbsp; <span id="f32-hex-v">0x00000000</span></div>
+      </div>
+
+      <!-- FP16 -->
+      <div class="fmt-card" id="card-fp16">
+        <div class="fmt-card-header">
+          <span class="fmt-badge b-float">FP16</span>
+          <span class="fmt-card-name">Half Precision</span>
+          <span class="fmt-card-range">~±65504</span>
+        </div>
+        <div class="fmt-input-wrap">
+          <input class="fmt-input" id="fp16" spellcheck="false" autocomplete="off" placeholder="0">
+        </div>
+        <div class="float-breakdown">
+          <div class="fb-bits-row" id="fp16-bits"></div>
+          <div class="fb-fields">
+            <div class="fb-field">
+              <div class="fbl">Sign</div>
+              <div class="fbv s" id="fp16-sign-v">+1</div>
+            </div>
+            <div class="fb-field">
+              <div class="fbl">Exp (5)</div>
+              <div class="fbv e" id="fp16-exp-v">—</div>
+            </div>
+            <div class="fb-field">
+              <div class="fbl">Mant (10)</div>
+              <div class="fbv m" id="fp16-mant-v">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="fmt-meta">1·5·10 &nbsp;·&nbsp; <span id="fp16-hex-v">0x0000</span></div>
+      </div>
+
+      <!-- BF16 -->
+      <div class="fmt-card" id="card-bf16">
+        <div class="fmt-card-header">
+          <span class="fmt-badge b-float">BF16</span>
+          <span class="fmt-card-name">Brain Float</span>
+          <span class="fmt-card-range">~±3.4e38</span>
+        </div>
+        <div class="fmt-input-wrap">
+          <input class="fmt-input" id="bf16" spellcheck="false" autocomplete="off" placeholder="0">
+        </div>
+        <div class="float-breakdown">
+          <div class="fb-bits-row" id="bf16-bits"></div>
+          <div class="fb-fields">
+            <div class="fb-field">
+              <div class="fbl">Sign</div>
+              <div class="fbv s" id="bf16-sign-v">+1</div>
+            </div>
+            <div class="fb-field">
+              <div class="fbl">Exp (8)</div>
+              <div class="fbv e" id="bf16-exp-v">—</div>
+            </div>
+            <div class="fb-field">
+              <div class="fbl">Mant (7)</div>
+              <div class="fbv m" id="bf16-mant-v">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="fmt-meta">1·8·7 (trunc FP32) &nbsp;·&nbsp; <span id="bf16-hex-v">0x0000</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Misc ── -->
+  <div class="fmt-group">
+    <div class="fmt-group-label">Misc</div>
+    <div class="fmt-cards">
+
+      <div class="fmt-card" id="card-ascii">
+        <div class="fmt-card-header">
+          <span class="fmt-badge b-misc">ASCII</span>
+          <span class="fmt-card-name">Character</span>
+          <span class="fmt-card-range">low byte</span>
+        </div>
+        <div class="fmt-input-wrap">
+          <input class="fmt-input" id="ascii" spellcheck="false" autocomplete="off"
+                 maxlength="1" placeholder="A">
+        </div>
+        <div class="fmt-meta" id="ascii-meta">code <span id="ascii-code">0x00 = 0</span></div>
+      </div>
+
+      <div class="fmt-card" id="card-color">
+        <div class="fmt-card-header">
+          <span class="fmt-badge b-misc">COLOR</span>
+          <span class="fmt-card-name">RGB Hex</span>
+          <span class="fmt-card-range">low 24 bits</span>
+        </div>
+        <div class="fmt-input-wrap">
+          <input class="fmt-input" id="color-hex" spellcheck="false" autocomplete="off"
+                 placeholder="#000000" maxlength="7" style="text-transform:uppercase">
+        </div>
+        <div class="color-swatch">
+          <div class="swatch-box" id="swatch"></div>
+          <div class="swatch-values">
+            R <span id="sw-r">0</span> &nbsp; G <span id="sw-g">0</span> &nbsp; B <span id="sw-b">0</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- .tool-page -->
+
+<script>
+(() => {
+  // ── State: one unsigned 32-bit integer ───────────────
+  let U = 0;
+
+  // ── ArrayBuffer helpers for IEEE 754 ─────────────────
+  const _buf = new ArrayBuffer(4);
+  const _fv  = new Float32Array(_buf);
+  const _uv  = new Uint32Array(_buf);
+  const bitsToF32 = b => { _uv[0] = b >>> 0; return _fv[0]; };
+  const f32ToBits = f => { _fv[0] = f;       return _uv[0] >>> 0; };
+
+  // ── FP16 ──────────────────────────────────────────────
+  function fp32BitsToFP16Bits(b32) {
+    const s = (b32 >>> 31) & 1;
+    const e = (b32 >>> 23) & 0xFF;
+    const m = b32 & 0x7FFFFF;
+    if (e === 0xFF) return (s << 15) | 0x7C00 | (m ? 0x200 : 0);
+    const e16 = e - 127 + 15;
+    if (e16 >= 31) return (s << 15) | 0x7C00;
+    if (e16 <= 0) {
+      if (e16 < -10) return s << 15;
+      return (s << 15) | (((0x800000 | m) >> (1 - e16)) >> 13);
+    }
+    return (s << 15) | (e16 << 10) | (m >> 13);
+  }
+
+  function fp16BitsToFP32Bits(b16) {
+    const s  = (b16 >>> 15) & 1;
+    const e  = (b16 >>> 10) & 0x1F;
+    const m  = b16 & 0x3FF;
+    if (e === 0x1F) return ((s << 31) | 0x7F800000 | (m ? 0x200000 : 0)) >>> 0;
+    if (e === 0) {
+      if (!m) return (s << 31) >>> 0;
+      let exp = 1, man = m;
+      while (!(man & 0x400)) { man <<= 1; exp++; }
+      return ((s << 31) | ((127 - 14 - exp) << 23) | ((man & 0x3FF) << 13)) >>> 0;
+    }
+    return ((s << 31) | ((e - 15 + 127) << 23) | (m << 13)) >>> 0;
+  }
+
+  // ── BF16 ─────────────────────────────────────────────
+  const fp32BitsToBF16 = b32 =>
+    ((b32 & 0x7F800000) === 0x7F800000 && (b32 & 0x7FFFFF))
+      ? ((b32 >>> 16) | 0x40) : b32 >>> 16;
+
+  const bf16ToFP32Bits = b16 => (b16 << 16) >>> 0;
+
+  // ── Fixed-point ───────────────────────────────────────
+  const toQ1616  = b => (b | 0) / 65536;
+  const fromQ1616 = v => Math.round(v * 65536) >>> 0;
+  const toQ88    = b => (((b & 0xFFFF) << 16) >> 16) / 256;
+  const fromQ88  = v => (Math.round(v * 256) & 0xFFFF) >>> 0;
+  const toQ248   = b => (b | 0) / 256;
+  const fromQ248 = v => Math.round(v * 256) >>> 0;
+
+  // ── Format helpers ────────────────────────────────────
+  const hex32  = b => (b >>> 0).toString(16).toUpperCase().padStart(8, '0');
+  const bin32  = b => (b >>> 0).toString(2).padStart(32, '0');
+  const oct11  = b => (b >>> 0).toString(8).padStart(11, '0');
+  const binSpaced = b => bin32(b).match(/.{4}/g).join(' ');
+
+  function fmtF(f) {
+    if (isNaN(f))     return 'NaN';
+    if (!isFinite(f)) return f > 0 ? 'Infinity' : '-Infinity';
+    return parseFloat(f.toPrecision(8)).toString();
+  }
+
+  // ── DOM helpers ───────────────────────────────────────
+  const $  = id  => document.getElementById(id);
+  const el = sel => document.querySelector(sel);
+
+  function setVal(id, v) {
+    const e = $(id);
+    if (e && e !== document.activeElement) e.value = v;
+  }
+  function setTxt(id, v) {
+    const e = $(id);
+    if (e) e.textContent = v;
+  }
+
+  // ── Bit grid ──────────────────────────────────────────
+  function buildBitGrid() {
+    const grid = $('bit-grid');
+    for (let i = 31; i >= 0; i--) {
+      const btn = document.createElement('button');
+      btn.id = `b${i}`;
+      btn.className = 'bit-btn ' + (i === 31 ? 'bit-sign' : i >= 23 ? 'bit-exp' : 'bit-mant');
+      btn.title = `bit ${i}`;
+      btn.textContent = '0';
+      btn.addEventListener('click', () => {
+        U = (U ^ (1 << i)) >>> 0;
+        refresh(null);
+      });
+      grid.appendChild(btn);
+    }
+  }
+
+  function updateBitGrid(bits) {
+    const s = bin32(bits);
+    for (let i = 0; i <= 31; i++) {
+      const btn = $(`b${i}`);
+      if (!btn) continue;
+      const v = s[31 - i] === '1';
+      btn.textContent = v ? '1' : '0';
+      btn.classList.toggle('bit-set', v);
+    }
+    setTxt('bits-hex-label', '0x' + hex32(bits));
+  }
+
+  // ── Float breakdown renderer ──────────────────────────
+  function renderBits(containerId, bits, total, signCount, expCount) {
+    const c = $(containerId);
+    if (!c) return;
+    const s = bits.toString(2).padStart(total, '0');
+    c.innerHTML = '';
+    for (let i = 0; i < total; i++) {
+      const pos = total - 1 - i;
+      const set = s[i] === '1';
+      const type = pos >= total - signCount             ? 'bit-sign'
+                 : pos >= total - signCount - expCount  ? 'bit-exp'
+                 : 'bit-mant';
+      const sp = document.createElement('span');
+      sp.className = 'mb ' + type + (set ? (type === 'bit-sign' ? ' s1' : type === 'bit-exp' ? ' e1' : ' m1') : '');
+      sp.textContent = s[i];
+      c.appendChild(sp);
+    }
+  }
+
+  function updateF32(bits) {
+    renderBits('f32-bits', bits, 32, 1, 8);
+    const s  = (bits >>> 31) & 1;
+    const e  = (bits >>> 23) & 0xFF;
+    const m  = bits & 0x7FFFFF;
+    const special = e === 0xFF ? (m ? 'NaN' : (s ? '−∞' : '+∞'))
+                  : e === 0 && !m ? (s ? '−0' : '+0') : null;
+    setTxt('f32-sign-v', s ? '−1' : '+1');
+    setTxt('f32-exp-v',  special || `${e} → 2^${e === 0 ? -126 : e - 127}`);
+    setTxt('f32-mant-v', special || (e === 0 ? '0' : '1') + '.' + (m / 8388608).toFixed(7).slice(2));
+    setTxt('f32-hex-v',  '0x' + hex32(bits));
+  }
+
+  function updateFP16(b16) {
+    renderBits('fp16-bits', b16, 16, 1, 5);
+    const s = (b16 >>> 15) & 1;
+    const e = (b16 >>> 10) & 0x1F;
+    const m = b16 & 0x3FF;
+    const sp = e === 0x1F ? (m ? 'NaN' : (s ? '−∞' : '+∞')) : e === 0 && !m ? (s ? '−0' : '+0') : null;
+    setTxt('fp16-sign-v', s ? '−1' : '+1');
+    setTxt('fp16-exp-v',  sp || `${e} → 2^${e - 15}`);
+    setTxt('fp16-mant-v', sp || (e === 0 ? '0' : '1') + '.' + (m / 1024).toFixed(4).slice(2));
+    setTxt('fp16-hex-v',  '0x' + b16.toString(16).toUpperCase().padStart(4, '0'));
+  }
+
+  function updateBF16(b16) {
+    renderBits('bf16-bits', b16, 16, 1, 8);
+    const s = (b16 >>> 15) & 1;
+    const e = (b16 >>> 7)  & 0xFF;
+    const m = b16 & 0x7F;
+    const sp = e === 0xFF ? (m ? 'NaN' : (s ? '−∞' : '+∞')) : e === 0 && !m ? (s ? '−0' : '+0') : null;
+    setTxt('bf16-sign-v', s ? '−1' : '+1');
+    setTxt('bf16-exp-v',  sp || `${e} → 2^${e === 0 ? -126 : e - 127}`);
+    setTxt('bf16-mant-v', sp || (e === 0 ? '0' : '1') + '.' + (m / 128).toFixed(4).slice(2));
+    setTxt('bf16-hex-v',  '0x' + b16.toString(16).toUpperCase().padStart(4, '0'));
+  }
+
+  // ── Color swatch ──────────────────────────────────────
+  function updateSwatch(bits) {
+    const r = (bits >>> 16) & 0xFF;
+    const g = (bits >>>  8) & 0xFF;
+    const b =  bits         & 0xFF;
+    const hex = '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0').toUpperCase()).join('');
+    const sw = $('swatch');
+    if (sw) sw.style.background = hex;
+    setVal('color-hex', hex);
+    setTxt('sw-r', r); setTxt('sw-g', g); setTxt('sw-b', b);
+  }
+
+  // ── Master refresh ────────────────────────────────────
+  function refresh(source) {
+    const b = U >>> 0;
+
+    updateBitGrid(b);
+
+    if (source !== 'i32')    setVal('i32',   (b | 0).toString());
+    if (source !== 'u32')    setVal('u32',   b.toString());
+    if (source !== 'hex')    setVal('hex',   hex32(b));
+    if (source !== 'bin')    setVal('bin',   binSpaced(b));
+    if (source !== 'oct')    setVal('oct',   oct11(b));
+
+    // ASCII
+    const lo = b & 0xFF;
+    const isprint = lo >= 0x20 && lo < 0x7F;
+    if (source !== 'ascii')
+      setVal('ascii', isprint ? String.fromCharCode(lo) : '');
+    setTxt('ascii-code', `0x${lo.toString(16).toUpperCase().padStart(2,'0')} = ${lo}${isprint ? ' \'' + String.fromCharCode(lo) + '\'' : ''}`);
+
+    // Fixed-point
+    if (source !== 'q1616')  setVal('q1616', toQ1616(b).toFixed(6));
+    if (source !== 'q88')    setVal('q88',   toQ88(b).toFixed(4));
+    if (source !== 'q248')   setVal('q248',  toQ248(b).toFixed(4));
+
+    // Float32
+    if (source !== 'f32')    setVal('f32',   fmtF(bitsToF32(b)));
+    updateF32(b);
+
+    // FP16
+    const fp16b = fp32BitsToFP16Bits(b);
+    if (source !== 'fp16')   setVal('fp16',  fmtF(bitsToF32(fp16BitsToFP32Bits(fp16b))));
+    updateFP16(fp16b);
+
+    // BF16
+    const bf16b = fp32BitsToBF16(b);
+    if (source !== 'bf16')   setVal('bf16',  fmtF(bitsToF32(bf16ToFP32Bits(bf16b))));
+    updateBF16(bf16b);
+
+    // Color
+    if (source !== 'color-hex') updateSwatch(b);
+  }
+
+  // ── Input parsers ─────────────────────────────────────
+  function parse(src, raw) {
+    const v = raw.trim();
+    try {
+      switch (src) {
+        case 'i32': {
+          const n = parseInt(v, 10);
+          if (isNaN(n)) return false;
+          U = n >>> 0; break;
+        }
+        case 'u32': {
+          const n = Number(v);
+          if (!Number.isInteger(n) || n < 0 || n > 0xFFFFFFFF) return false;
+          U = n >>> 0; break;
+        }
+        case 'hex': {
+          const c = v.replace(/^0x/i,'').replace(/\s/g,'');
+          if (!/^[0-9a-fA-F]{1,8}$/.test(c)) return false;
+          U = parseInt(c, 16) >>> 0; break;
+        }
+        case 'bin': {
+          const c = v.replace(/\s/g,'');
+          if (!/^[01]{1,32}$/.test(c)) return false;
+          U = parseInt(c, 2) >>> 0; break;
+        }
+        case 'oct': {
+          if (!/^[0-7]{1,11}$/.test(v)) return false;
+          U = parseInt(v, 8) >>> 0; break;
+        }
+        case 'ascii': {
+          if (v.length !== 1) return false;
+          const code = v.charCodeAt(0);
+          if (code > 127) return false;
+          U = (U & 0xFFFFFF00) | code; break;
+        }
+        case 'q1616': {
+          const n = parseFloat(v);
+          if (isNaN(n)) return false;
+          U = fromQ1616(n); break;
+        }
+        case 'q88': {
+          const n = parseFloat(v);
+          if (isNaN(n)) return false;
+          U = fromQ88(n); break;
+        }
+        case 'q248': {
+          const n = parseFloat(v);
+          if (isNaN(n)) return false;
+          U = fromQ248(n); break;
+        }
+        case 'f32': {
+          if (/^nan$/i.test(v))                          { U = 0x7FC00000; break; }
+          if (/^[+]?inf(inity)?$/i.test(v))              { U = 0x7F800000; break; }
+          if (/^-inf(inity)?$/i.test(v))                 { U = 0xFF800000; break; }
+          const n = parseFloat(v);
+          if (isNaN(n)) return false;
+          U = f32ToBits(n); break;
+        }
+        case 'fp16': {
+          const n = parseFloat(v);
+          if (isNaN(n) && !/^nan$/i.test(v)) return false;
+          const bits = isNaN(n) ? 0x7E00 : fp32BitsToFP16Bits(f32ToBits(n));
+          U = fp16BitsToFP32Bits(bits); break;
+        }
+        case 'bf16': {
+          const n = parseFloat(v);
+          if (isNaN(n)) return false;
+          U = bf16ToFP32Bits(fp32BitsToBF16(f32ToBits(n))); break;
+        }
+        case 'color-hex': {
+          const c = v.replace(/^#/,'');
+          if (!/^[0-9a-fA-F]{6}$/.test(c)) return false;
+          U = (U & 0xFF000000) | parseInt(c, 16); break;
+        }
+        default: return false;
+      }
+      return true;
+    } catch(e) { return false; }
+  }
+
+  // ── Wire inputs ───────────────────────────────────────
+  const ALL_INPUTS = ['i32','u32','hex','bin','oct','ascii',
+                      'q1616','q88','q248','f32','fp16','bf16','color-hex'];
+
+  function wire(id) {
+    const e = $(id);
+    if (!e) return;
+    e.addEventListener('input', () => {
+      const ok = parse(id, e.value);
+      e.classList.toggle('error', e.value !== '' && !ok);
+      if (ok) refresh(id);
+    });
+    e.addEventListener('focus', () => {
+      e.closest('.fmt-card')?.classList.add('active');
+    });
+    e.addEventListener('blur', () => {
+      e.closest('.fmt-card')?.classList.remove('active');
+      e.classList.remove('error');
+      refresh(null);  // reformat on blur
+    });
+  }
+
+  // ── Presets ───────────────────────────────────────────
+  const PRESETS = [
+    { label: '0',       bits: 0x00000000 },
+    { label: '1',       bits: 0x00000001 },
+    { label: '-1',      bits: 0xFFFFFFFF },
+    { label: 'INT_MAX', bits: 0x7FFFFFFF },
+    { label: 'INT_MIN', bits: 0x80000000 },
+    { label: '1.0f',    bits: 0x3F800000 },
+    { label: '0.5f',    bits: 0x3F000000 },
+    { label: '-0.0f',   bits: 0x80000000 },
+    { label: 'π',       bits: 0x40490FDB },
+    { label: '√2',      bits: 0x3FB504F3 },
+    { label: 'e',       bits: 0x402DF854 },
+    { label: 'NaN',     bits: 0x7FC00000 },
+    { label: '+∞',      bits: 0x7F800000 },
+    { label: '-∞',      bits: 0xFF800000 },
+    { label: 'FLT_MAX', bits: 0x7F7FFFFF },
+    { label: 'FLT_MIN', bits: 0x00800000 },
+    { label: 'ε',       bits: 0x34000000 },
+  ];
+
+  function buildPresets() {
+    const wrap = $('presets');
+    PRESETS.forEach(p => {
+      const btn = document.createElement('button');
+      btn.className = 'preset-btn';
+      btn.textContent = p.label;
+      btn.addEventListener('click', () => {
+        U = p.bits >>> 0;
+        refresh(null);
+      });
+      wrap.appendChild(btn);
+    });
+  }
+
+  // ── Init ──────────────────────────────────────────────
+  buildBitGrid();
+  buildPresets();
+  ALL_INPUTS.forEach(wire);
+  refresh(null);
+})();
+</script>

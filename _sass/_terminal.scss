@@ -1,0 +1,191 @@
+// ── Popup Terminal ────────────────────────────────────────────────────────
+
+#term-toggle-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: $bg-card;
+  border: 1px solid $green-dim;
+  color: $green;
+  font-family: $font-mono;
+  font-size: 11px;
+  padding: 7px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  z-index: 9000;
+  letter-spacing: .1em;
+  transition: border-color .12s, background .12s, color .12s;
+  &:hover { background: rgba(98,222,97,.06); border-color: $green; color: $green-bright; }
+}
+
+#popup-terminal {
+  position: fixed;
+  bottom: 70px;
+  right: 24px;
+  width: min(720px, calc(100vw - 48px));
+  height: 460px;
+  background: rgba(8,10,8,.97);
+  border: 1px solid $green-dim;
+  border-radius: 6px;
+  box-shadow: 0 16px 56px rgba(0,0,0,.75), 0 0 0 1px rgba(98,222,97,.04);
+  z-index: 9001;
+  display: flex;
+  flex-direction: column;
+  font-family: $font-mono;
+  overflow: hidden;
+  resize: both;
+
+  &.term-hidden { display: none !important; }
+  &.term-min .term-body { display: none; }
+}
+
+// ── Title bar ─────────────────────────────────────────────────────────────
+.term-titlebar {
+  background: #0b0e0b;
+  border-bottom: 1px solid $border;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+  &:active { cursor: grabbing; }
+}
+
+.term-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.term-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: transparent;
+  transition: color .1s;
+  &:hover { color: rgba(0,0,0,.55); }
+  &.td-red { background: #ff5f57; }
+  &.td-yel { background: #febc2e; }
+  &.td-grn { background: #28c840; cursor: default; }
+}
+
+.term-title-str {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  color: $text-muted;
+  letter-spacing: .06em;
+}
+
+.term-kbd-hint {
+  font-size: 9px;
+  color: rgba(61,90,61,.5);
+  letter-spacing: .04em;
+  flex-shrink: 0;
+}
+
+// ── Body ──────────────────────────────────────────────────────────────────
+.term-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 10px 14px 10px;
+  min-height: 0;
+}
+
+.term-output {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-size: 12px;
+  line-height: 1.7;
+  color: $text-dim;
+  margin-bottom: 8px;
+  min-height: 0;
+  word-break: break-word;
+
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $border; border-radius: 2px; }
+
+  // Output token styles
+  .tg    { color: $green; }
+  .tgb   { color: $green; font-weight: 700; }
+  .tgbr  { color: $green-bright; font-weight: 700; }
+  .tdim  { color: $text-muted; }
+  .terr  { color: #ff5f57; }
+  .twarn { color: #febc2e; }
+  .tblu  { color: $blue; }
+  .tpur  { color: $purple; }
+  .tdir  { color: $green; font-weight: 700; }
+  .tfile { color: $text-dim; }
+  .tlink { color: $blue; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+  .tcmd  { color: $text; }
+  .th1   { color: $green; font-size: 13px; font-weight: 700; letter-spacing: .04em; }
+  .th2   { color: $green-dim; font-weight: 700; }
+  .tcode { color: #febc2e; background: rgba(254,188,46,.07); padding: 0 3px; border-radius: 2px; }
+  .tsep  { color: $border-bright; }
+  .thi   { background: rgba(98,222,97,.15); color: $green; padding: 0 2px; }
+}
+
+.term-input-row {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  border-top: 1px solid $border;
+  padding-top: 8px;
+}
+
+.term-prompt-str {
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  .tp-u { color: $green; }
+  .tp-s { color: $text-muted; }
+  .tp-c { color: $blue; }
+}
+
+.term-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: $text;
+  font-family: $font-mono;
+  font-size: 12px;
+  caret-color: $green;
+  padding: 0 0 0 4px;
+}
+
+// ── Tab completion ─────────────────────────────────────────────────────────
+#term-completions {
+  display: none;
+  position: absolute;
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 3px;
+  padding: 4px 0;
+  font-size: 11px;
+  font-family: $font-mono;
+  z-index: 9002;
+  max-height: 130px;
+  overflow-y: auto;
+  min-width: 160px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+
+  .tc-item {
+    padding: 3px 12px;
+    cursor: pointer;
+    color: $text-dim;
+    &.tc-sel, &:hover { background: rgba(98,222,97,.08); color: $green; }
+  }
+}

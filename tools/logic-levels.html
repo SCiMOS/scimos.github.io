@@ -1,0 +1,733 @@
+---
+layout: default
+title: Logic Levels Calculator
+permalink: /tools/logic-levels/
+---
+
+<div class="tool-page">
+
+  <!-- ── Header ── -->
+  <div class="tool-hero">
+    <div class="cmd-bar">
+      <span class="prompt-g">user@gpu-node</span><span class="ps">:</span><span class="pp">~/tools</span><span class="pd">$</span>
+      <span class="cmd-text"> ./logic-levels --node 5nm --freq 3.5GHz</span>
+    </div>
+    <h1>Logic Levels Calculator</h1>
+    <p>Select a silicon process node to explore CMOS voltage levels, timing budgets, and power density.<br>
+       All calculations update live as you adjust frequency and activity factor.
+       <a href="/reference/logic-levels-reference/" class="ll-ref-link">&#x2192; calculations reference &amp; sources</a></p>
+  </div>
+
+  <!-- ── Controls ── -->
+  <div class="ll-controls">
+    <div class="ll-control-group">
+      <div class="presets-label">$ select process node</div>
+      <div class="presets-row" id="node-btns"></div>
+    </div>
+
+    <div class="ll-sliders">
+      <div class="ll-slider-row">
+        <label class="ll-label" for="freq-input">Frequency (GHz)</label>
+        <input type="range" id="freq-range" min="0.1" max="5.0" step="0.1" value="3.0" class="ll-range">
+        <input type="number" id="freq-input" min="0.1" max="5.0" step="0.1" value="3.0" class="ll-num-input">
+        <span class="ll-unit">GHz</span>
+      </div>
+      <div class="ll-slider-row">
+        <label class="ll-label" for="alpha-input">Activity Factor (α)</label>
+        <input type="range" id="alpha-range" min="0.01" max="1.0" step="0.01" value="0.3" class="ll-range">
+        <input type="number" id="alpha-input" min="0.01" max="1.0" step="0.01" value="0.3" class="ll-num-input">
+        <span class="ll-unit">&nbsp;</span>
+      </div>
+      <div class="ll-slider-row">
+        <label class="ll-label" for="area-input">Die Area (mm²)</label>
+        <input type="range" id="area-range" min="1" max="800" step="1" value="200" class="ll-range">
+        <input type="number" id="area-input" min="1" max="800" step="1" value="200" class="ll-num-input">
+        <span class="ll-unit">mm²</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Voltage Levels Panel ── -->
+  <div class="ll-section-label">$ voltage levels — CMOS thresholds</div>
+  <div class="ll-panels">
+
+    <div class="ll-vol-card">
+      <div class="ll-card-header">
+        <span class="ll-card-title">Voltage Level Diagram</span>
+        <span id="vdd-badge" class="ll-vdd-badge">VDD = 0.8V</span>
+      </div>
+      <div class="ll-voltage-diagram" id="voltage-diagram">
+        <!-- rendered by JS -->
+      </div>
+    </div>
+
+    <div class="ll-metrics-grid">
+      <div class="ll-metric-card" id="mc-voh">
+        <div class="ll-metric-label">VOH</div>
+        <div class="ll-metric-val" id="mv-voh">—</div>
+        <div class="ll-metric-desc">Min output HIGH</div>
+      </div>
+      <div class="ll-metric-card" id="mc-vol">
+        <div class="ll-metric-label">VOL</div>
+        <div class="ll-metric-val" id="mv-vol">—</div>
+        <div class="ll-metric-desc">Max output LOW</div>
+      </div>
+      <div class="ll-metric-card" id="mc-vih">
+        <div class="ll-metric-label">VIH</div>
+        <div class="ll-metric-val" id="mv-vih">—</div>
+        <div class="ll-metric-desc">Min input HIGH</div>
+      </div>
+      <div class="ll-metric-card" id="mc-vil">
+        <div class="ll-metric-label">VIL</div>
+        <div class="ll-metric-val" id="mv-vil">—</div>
+        <div class="ll-metric-desc">Max input LOW</div>
+      </div>
+      <div class="ll-metric-card accent-h" id="mc-nmh">
+        <div class="ll-metric-label">NMH</div>
+        <div class="ll-metric-val" id="mv-nmh">—</div>
+        <div class="ll-metric-desc">Noise margin HIGH</div>
+      </div>
+      <div class="ll-metric-card accent-l" id="mc-nml">
+        <div class="ll-metric-label">NML</div>
+        <div class="ll-metric-val" id="mv-nml">—</div>
+        <div class="ll-metric-desc">Noise margin LOW</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Timing Panel ── -->
+  <div class="ll-section-label">$ timing analysis — logic depth & feasibility</div>
+  <div class="ll-timing-wrap">
+
+    <div class="ll-timing-metrics">
+      <div class="ll-trow">
+        <span class="ll-tlabel">Clock Period</span>
+        <span class="ll-tval" id="tv-period">—</span>
+      </div>
+      <div class="ll-trow">
+        <span class="ll-tlabel">FO4 Delay</span>
+        <span class="ll-tval" id="tv-fo4">—</span>
+      </div>
+      <div class="ll-trow">
+        <span class="ll-tlabel">Gate Delay (typ)</span>
+        <span class="ll-tval" id="tv-gate">—</span>
+      </div>
+      <div class="ll-trow">
+        <span class="ll-tlabel">Available Logic Depth</span>
+        <span class="ll-tval" id="tv-depth">—</span>
+      </div>
+      <div class="ll-trow">
+        <span class="ll-tlabel">Max Feasible Frequency</span>
+        <span class="ll-tval" id="tv-fmax">—</span>
+      </div>
+    </div>
+
+    <div class="ll-timing-visual">
+      <div class="ll-timing-bar-label">Feasibility at target frequency</div>
+      <div class="ll-timing-bar-wrap">
+        <div class="ll-timing-bar-track">
+          <div class="ll-timing-bar-fill" id="timing-bar"></div>
+        </div>
+        <span class="ll-timing-pct" id="timing-pct">—</span>
+      </div>
+      <div class="ll-waveform" id="waveform-svg"></div>
+    </div>
+
+  </div>
+
+  <!-- ── Gate Type Critical Path ── -->
+  <div class="ll-section-label">$ critical path depth — by gate type</div>
+  <div class="ll-gt-wrap">
+
+    <div class="presets-label">$ select gate type</div>
+    <div class="presets-row" id="gatetype-btns"></div>
+
+    <div class="ll-gt-panels">
+
+      <div class="ll-gt-info" id="gt-info">
+        <!-- rendered by JS -->
+      </div>
+
+      <div class="ll-gt-table-wrap">
+        <table class="ll-table ll-gt-table">
+          <thead>
+            <tr>
+              <th>Gate</th>
+              <th>Function</th>
+              <th>Log. Effort (g)</th>
+              <th>Delay / gate</th>
+              <th>Gates in path</th>
+              <th>Logic levels</th>
+            </tr>
+          </thead>
+          <tbody id="gt-tbody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Gate Count Panel ── -->
+  <div class="ll-section-label">$ gate count — capacity at target frequency</div>
+  <div class="ll-gate-wrap">
+
+    <div class="ll-gate-metrics">
+      <div class="ll-trow">
+        <span class="ll-tlabel">Total Transistors</span>
+        <span class="ll-tval" id="tv-tx-total">—</span>
+      </div>
+      <div class="ll-trow">
+        <span class="ll-tlabel">Total NAND2-eq Gates</span>
+        <span class="ll-tval accent" id="tv-gates-total">—</span>
+      </div>
+      <div class="ll-trow">
+        <span class="ll-tlabel">Critical Path Depth</span>
+        <span class="ll-tval" id="tv-crit-depth">—</span>
+      </div>
+      <div class="ll-trow">
+        <span class="ll-tlabel">Logic Budget (60% of T)</span>
+        <span class="ll-tval" id="tv-logic-budget">—</span>
+      </div>
+      <div class="ll-trow">
+        <span class="ll-tlabel">Max Parallel Pipelines</span>
+        <span class="ll-tval" id="tv-pipelines">—</span>
+      </div>
+      <div class="ll-trow">
+        <span class="ll-tlabel">Active Gates / Cycle</span>
+        <span class="ll-tval" id="tv-gates-active">—</span>
+      </div>
+      <div class="ll-trow">
+        <span class="ll-tlabel">Switching Events / sec</span>
+        <span class="ll-tval accent" id="tv-switch-rate">—</span>
+      </div>
+    </div>
+
+    <div class="ll-gate-visual">
+      <div class="ll-gate-chart-label">Gate utilisation breakdown</div>
+      <div class="ll-gate-bars" id="gate-bars">
+        <!-- rendered by JS -->
+      </div>
+      <div class="ll-gate-formula">
+        <span class="ll-gf-line">gates_total  = density × area × 10⁶ ÷ 4</span>
+        <span class="ll-gf-line">depth        = ⌊T<sub>clk</sub> × 0.6 ÷ t<sub>FO4</sub>⌋  (FO4 stages)</span>
+        <span class="ll-gf-line">pipelines    = gates_total ÷ depth</span>
+        <span class="ll-gf-line">active/cycle = gates_total × α</span>
+        <span class="ll-gf-line">switch/sec   = active × f</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Power Panel ── -->
+  <div class="ll-section-label">$ power density — dynamic + leakage</div>
+  <div class="ll-power-wrap">
+    <div class="ll-power-metrics">
+      <div class="ll-trow">
+        <span class="ll-tlabel">Dynamic Power Density</span>
+        <span class="ll-tval" id="tv-pdyn">—</span>
+      </div>
+      <div class="ll-trow">
+        <span class="ll-tlabel">Leakage Power Density</span>
+        <span class="ll-tval" id="tv-pleak">—</span>
+      </div>
+      <div class="ll-trow">
+        <span class="ll-tlabel">Total Power Density</span>
+        <span class="ll-tval accent" id="tv-ptot">—</span>
+      </div>
+    </div>
+
+    <div class="ll-power-bar-wrap">
+      <div class="ll-power-bar-label">Dynamic vs Leakage split</div>
+      <div class="ll-split-bar">
+        <div class="ll-split-dyn" id="split-dyn"></div>
+        <div class="ll-split-leak" id="split-leak"></div>
+      </div>
+      <div class="ll-split-legend">
+        <span class="ll-leg-dyn">■ Dynamic</span>
+        <span class="ll-leg-leak">■ Leakage</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Physical Parameters ── -->
+  <div class="ll-section-label">$ physical parameters — process technology</div>
+  <div class="ll-phys-grid" id="phys-grid">
+    <!-- rendered by JS -->
+  </div>
+
+  <!-- ── Node Comparison Table ── -->
+  <div class="ll-section-label">$ node comparison — all process nodes</div>
+  <div class="ll-table-wrap">
+    <table class="ll-table" id="node-table">
+      <thead>
+        <tr>
+          <th>Node</th>
+          <th>VDD (V)</th>
+          <th>Gate Delay</th>
+          <th>FO4</th>
+          <th>f<sub>max</sub> (GHz)</th>
+          <th>Density (MT/mm²)</th>
+          <th>Transistor Type</th>
+        </tr>
+      </thead>
+      <tbody id="node-table-body">
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+// ── Process Node Database ──────────────────────────────────────────────────
+const NODES = [
+  { label:'180nm', vdd:1.8,  gateDelay:200,  fo4:800,  fmax:0.6,  density:0.003, gatePitch:720,  metalPitch:640,  txType:'Planar'  },
+  { label:'130nm', vdd:1.5,  gateDelay:130,  fo4:520,  fmax:1.0,  density:0.008, gatePitch:520,  metalPitch:420,  txType:'Planar'  },
+  { label:'90nm',  vdd:1.2,  gateDelay:90,   fo4:360,  fmax:1.5,  density:0.02,  gatePitch:360,  metalPitch:280,  txType:'Planar'  },
+  { label:'65nm',  vdd:1.2,  gateDelay:65,   fo4:260,  fmax:2.0,  density:0.05,  gatePitch:280,  metalPitch:200,  txType:'Planar'  },
+  { label:'45nm',  vdd:1.1,  gateDelay:45,   fo4:180,  fmax:2.5,  density:0.12,  gatePitch:200,  metalPitch:160,  txType:'Planar'  },
+  { label:'32nm',  vdd:1.0,  gateDelay:32,   fo4:128,  fmax:3.0,  density:0.25,  gatePitch:154,  metalPitch:112,  txType:'Planar'  },
+  { label:'22nm',  vdd:1.0,  gateDelay:22,   fo4:88,   fmax:3.5,  density:0.48,  gatePitch:112,  metalPitch:80,   txType:'FinFET'  },
+  { label:'16nm',  vdd:0.9,  gateDelay:18,   fo4:72,   fmax:4.0,  density:1.0,   gatePitch:90,   metalPitch:64,   txType:'FinFET'  },
+  { label:'10nm',  vdd:0.85, gateDelay:14,   fo4:56,   fmax:4.5,  density:2.4,   gatePitch:68,   metalPitch:44,   txType:'FinFET'  },
+  { label:'7nm',   vdd:0.8,  gateDelay:11,   fo4:44,   fmax:5.0,  density:6.0,   gatePitch:54,   metalPitch:40,   txType:'FinFET'  },
+  { label:'5nm',   vdd:0.75, gateDelay:9,    fo4:36,   fmax:5.5,  density:13.0,  gatePitch:45,   metalPitch:32,   txType:'FinFET'  },
+  { label:'4nm',   vdd:0.75, gateDelay:8,    fo4:32,   fmax:6.0,  density:18.0,  gatePitch:42,   metalPitch:28,   txType:'FinFET'  },
+  { label:'3nm',   vdd:0.75, gateDelay:7,    fo4:28,   fmax:6.5,  density:28.0,  gatePitch:40,   metalPitch:24,   txType:'GAA'     },
+  { label:'2nm',   vdd:0.7,  gateDelay:6,    fo4:24,   fmax:7.0,  density:50.0,  gatePitch:30,   metalPitch:20,   txType:'GAA'     },
+];
+
+// Reference power density at nominal VDD & 1GHz (mW/mm²)
+const REF_PDYN  = { '180nm':10, '130nm':15, '90nm':25, '65nm':40, '45nm':60, '32nm':80,
+                    '22nm':100, '16nm':110, '10nm':120, '7nm':130, '5nm':140, '4nm':150,
+                    '3nm':155,  '2nm':160 };
+const REF_PLEAK = { '180nm':0.2,'130nm':0.5,'90nm':1,  '65nm':2,  '45nm':4,  '32nm':8,
+                    '22nm':15,  '16nm':20,  '10nm':28, '7nm':35,  '5nm':40,  '4nm':44,
+                    '3nm':48,   '2nm':52  };
+
+// ── Gate Type Database ─────────────────────────────────────────────────────
+// g = logical effort (Sutherland, Sproull & Harris "Logical Effort", 1999)
+// complexity = number of AND/OR logic levels the gate implements in one stage
+const GATE_TYPES = [
+  { name:'INV',    full:'Inverter',          g:1.00, complexity:1, inputs:1, fn:'¬A'                },
+  { name:'NAND2',  full:'NAND-2',            g:1.33, complexity:1, inputs:2, fn:'¬(A·B)'            },
+  { name:'NAND3',  full:'NAND-3',            g:1.67, complexity:1, inputs:3, fn:'¬(A·B·C)'          },
+  { name:'NOR2',   full:'NOR-2',             g:1.67, complexity:1, inputs:2, fn:'¬(A+B)'            },
+  { name:'NOR3',   full:'NOR-3',             g:2.33, complexity:1, inputs:3, fn:'¬(A+B+C)'          },
+  { name:'AOI21',  full:'AND-OR-INV 2-1',    g:1.50, complexity:2, inputs:3, fn:'¬(A·B + C)'        },
+  { name:'AOI22',  full:'AND-OR-INV 2-2',    g:2.00, complexity:2, inputs:4, fn:'¬(A·B + C·D)'      },
+  { name:'AOI211', full:'AND-OR-INV 2-1-1',  g:1.67, complexity:3, inputs:4, fn:'¬(A·B + C + D)'    },
+  { name:'OAI21',  full:'OR-AND-INV 2-1',    g:1.67, complexity:2, inputs:3, fn:'¬((A+B)·C)'        },
+  { name:'OAI22',  full:'OR-AND-INV 2-2',    g:2.00, complexity:2, inputs:4, fn:'¬((A+B)·(C+D))'    },
+];
+
+// ── State ─────────────────────────────────────────────────────────────────
+let selectedNode = NODES.find(n => n.label === '7nm');
+let selectedGateType = GATE_TYPES.find(g => g.name === 'AOI22');
+let freq = 3.0;   // GHz
+let alpha = 0.3;
+let dieArea = 200; // mm²
+
+// ── DOM helpers ───────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmtV = v  => v.toFixed(3) + ' V';
+const fmtPs = ps => ps >= 1000 ? (ps/1000).toFixed(2) + ' ns' : ps.toFixed(0) + ' ps';
+const fmtF  = f  => f.toFixed(2) + ' GHz';
+function fmtCount(n) {
+  if (n >= 1e12) return (n/1e12).toFixed(2) + ' T';
+  if (n >= 1e9)  return (n/1e9).toFixed(2)  + ' B';
+  if (n >= 1e6)  return (n/1e6).toFixed(2)  + ' M';
+  if (n >= 1e3)  return (n/1e3).toFixed(1)  + ' K';
+  return n.toFixed(0);
+}
+
+// ── Gate type selector buttons ─────────────────────────────────────────────
+function buildGateTypeBtns() {
+  const wrap = $('gatetype-btns');
+  GATE_TYPES.forEach(gt => {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn' + (gt === selectedGateType ? ' active-preset' : '');
+    btn.textContent = gt.name;
+    btn.onclick = () => {
+      selectedGateType = gt;
+      document.querySelectorAll('#gatetype-btns .preset-btn').forEach(b => b.classList.remove('active-preset'));
+      btn.classList.add('active-preset');
+      updateGateType();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+// Compute gate-in-path for a given gate type given current node + freq
+function gatesInPath(gt) {
+  const n = selectedNode;
+  const periodPs = 1000 / freq;
+  const logicBudgetPs = periodPs * 0.6;
+  // delay per gate of this type = g × t_gate
+  // (t_FO4 ≈ 4×t_gate is baked in; we scale from the raw gate delay)
+  const delayPerGate = gt.g * n.gateDelay;
+  return {
+    delayPs:  delayPerGate,
+    count:    Math.floor(logicBudgetPs / delayPerGate),
+    levels:   Math.floor(logicBudgetPs / delayPerGate) * gt.complexity,
+    budget:   logicBudgetPs,
+  };
+}
+
+function updateGateType() {
+  const gt = selectedGateType;
+  const { delayPs, count, levels, budget } = gatesInPath(gt);
+  const nand2 = gatesInPath(GATE_TYPES.find(x => x.name === 'NAND2'));
+
+  $('gt-info').innerHTML = `
+    <div class="ll-gt-card">
+      <div class="ll-gt-card-header">
+        <span class="ll-gt-name">${gt.name}</span>
+        <span class="ll-gt-full">${gt.full}</span>
+        <code class="ll-gt-fn">${gt.fn}</code>
+      </div>
+      <div class="ll-gt-rows">
+        <div class="ll-trow"><span class="ll-tlabel">Logical effort (g)</span>
+          <span class="ll-tval">${gt.g.toFixed(2)}</span></div>
+        <div class="ll-trow"><span class="ll-tlabel">Delay per gate</span>
+          <span class="ll-tval">${fmtPs(delayPs)}</span></div>
+        <div class="ll-trow"><span class="ll-tlabel">Logic budget (60% × T)</span>
+          <span class="ll-tval">${fmtPs(budget)}</span></div>
+        <div class="ll-trow"><span class="ll-tlabel">Gates in critical path</span>
+          <span class="ll-tval accent">${count} gates</span></div>
+        <div class="ll-trow"><span class="ll-tlabel">Logic levels (× complexity ${gt.complexity})</span>
+          <span class="ll-tval accent">${levels} levels</span></div>
+        <div class="ll-trow"><span class="ll-tlabel">vs NAND2 baseline</span>
+          <span class="ll-tval ${count > nand2.count ? 'col-green' : count < nand2.count ? 'col-red' : ''}">${
+            count === nand2.count ? 'same' :
+            count > nand2.count  ? '+' + (count - nand2.count) + ' gates more' :
+                                   (nand2.count - count) + ' gates fewer'
+          }</span></div>
+      </div>
+    </div>
+  `;
+
+  // Rebuild comparison table
+  const tbody = $('gt-tbody');
+  tbody.innerHTML = '';
+  GATE_TYPES.forEach(g => {
+    const r = gatesInPath(g);
+    const tr = document.createElement('tr');
+    if (g === selectedGateType) tr.classList.add('ll-row-active');
+    tr.innerHTML = `
+      <td class="ll-td-node">${g.name}</td>
+      <td style="font-family:monospace;font-size:11px;color:#6a8a6a">${g.fn}</td>
+      <td>${g.g.toFixed(2)}</td>
+      <td>${fmtPs(r.delayPs)}</td>
+      <td class="${g === selectedGateType ? 'col-green' : ''}">${r.count}</td>
+      <td>${r.levels}</td>
+    `;
+    tr.onclick = () => {
+      selectedGateType = g;
+      document.querySelectorAll('#gatetype-btns .preset-btn').forEach(b => {
+        b.classList.toggle('active-preset', b.textContent === g.name);
+      });
+      updateGateType();
+    };
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Build node selector buttons ────────────────────────────────────────────
+function buildNodeBtns() {
+  const wrap = $('node-btns');
+  NODES.forEach(node => {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn' + (node === selectedNode ? ' active-preset' : '');
+    btn.textContent = node.label;
+    btn.dataset.label = node.label;
+    btn.onclick = () => {
+      selectedNode = node;
+      document.querySelectorAll('#node-btns .preset-btn').forEach(b => b.classList.remove('active-preset'));
+      btn.classList.add('active-preset');
+      update();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+// ── Build comparison table ─────────────────────────────────────────────────
+function buildNodeTable() {
+  const tbody = $('node-table-body');
+  tbody.innerHTML = '';
+  NODES.forEach(n => {
+    const tr = document.createElement('tr');
+    tr.dataset.label = n.label;
+    tr.innerHTML = `
+      <td class="ll-td-node">${n.label}</td>
+      <td>${n.vdd.toFixed(2)}</td>
+      <td>${fmtPs(n.gateDelay)}</td>
+      <td>${fmtPs(n.fo4)}</td>
+      <td>${n.fmax.toFixed(1)}</td>
+      <td>${n.density < 1 ? n.density.toFixed(3) : n.density.toFixed(0)}</td>
+      <td><span class="ll-tx-badge ll-tx-${n.txType.toLowerCase()}">${n.txType}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Voltage diagram ────────────────────────────────────────────────────────
+function renderVoltageDiagram(n) {
+  const vdd = n.vdd;
+  const voh = 0.9 * vdd, vol = 0.1 * vdd, vih = 0.7 * vdd, vil = 0.3 * vdd;
+  const H = 220, W = 120;
+  // map voltage → y (vdd=top, 0=bottom)
+  const y = v => Math.round((1 - v/vdd) * (H - 20) + 10);
+
+  const yVoh = y(voh), yVih = y(vih), yVil = y(vil), yVol = y(vol);
+
+  $('voltage-diagram').innerHTML = `
+    <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Valid HIGH zone (VOH → VDD) -->
+      <rect x="18" y="${y(vdd)}" width="64" height="${yVoh - y(vdd)}" fill="rgba(98,222,97,.15)" stroke="none"/>
+      <!-- HIGH noise margin (VIH → VOH) -->
+      <rect x="18" y="${yVoh}" width="64" height="${yVih - yVoh}" fill="rgba(98,222,97,.07)" stroke="none"/>
+      <!-- Forbidden zone (VIL → VIH) -->
+      <rect x="18" y="${yVih}" width="64" height="${yVil - yVih}" fill="rgba(254,188,46,.07)" stroke="none"/>
+      <!-- LOW noise margin (VOL → VIL) -->
+      <rect x="18" y="${yVil}" width="64" height="${yVol - yVil}" fill="rgba(91,155,213,.07)" stroke="none"/>
+      <!-- Valid LOW zone (0 → VOL) -->
+      <rect x="18" y="${yVol}" width="64" height="${y(0) - yVol}" fill="rgba(91,155,213,.15)" stroke="none"/>
+
+      <!-- VDD rail -->
+      <line x1="12" y1="${y(vdd)}" x2="90" y2="${y(vdd)}" stroke="#62de61" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <!-- VOH -->
+      <line x1="12" y1="${yVoh}" x2="90" y2="${yVoh}" stroke="#62de61" stroke-width="1" stroke-dasharray="3,3"/>
+      <!-- VIH -->
+      <line x1="12" y1="${yVih}" x2="90" y2="${yVih}" stroke="#febc2e" stroke-width="1" stroke-dasharray="3,3"/>
+      <!-- VIL -->
+      <line x1="12" y1="${yVil}" x2="90" y2="${yVil}" stroke="#febc2e" stroke-width="1" stroke-dasharray="3,3"/>
+      <!-- VOL -->
+      <line x1="12" y1="${yVol}" x2="90" y2="${yVol}" stroke="#5b9bd5" stroke-width="1" stroke-dasharray="3,3"/>
+      <!-- GND rail -->
+      <line x1="12" y1="${y(0)}" x2="90" y2="${y(0)}" stroke="#5b9bd5" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+      <!-- Labels left -->
+      <text x="10" y="${y(vdd)+4}"  text-anchor="end" fill="#62de61"  font-size="8" font-family="monospace">VDD</text>
+      <text x="10" y="${yVoh+4}"    text-anchor="end" fill="#62de61"  font-size="8" font-family="monospace">VOH</text>
+      <text x="10" y="${yVih+4}"    text-anchor="end" fill="#febc2e"  font-size="8" font-family="monospace">VIH</text>
+      <text x="10" y="${yVil+4}"    text-anchor="end" fill="#febc2e"  font-size="8" font-family="monospace">VIL</text>
+      <text x="10" y="${yVol+4}"    text-anchor="end" fill="#5b9bd5"  font-size="8" font-family="monospace">VOL</text>
+      <text x="10" y="${y(0)+4}"    text-anchor="end" fill="#5b9bd5"  font-size="8" font-family="monospace">GND</text>
+
+      <!-- Zone labels right -->
+      <text x="92" y="${(y(vdd)+yVoh)/2+3}" fill="#62de61" font-size="7" font-family="monospace">HIGH</text>
+      <text x="92" y="${(yVoh+yVih)/2+3}"   fill="#62de61" font-size="7" font-family="monospace" opacity=".7">NMH</text>
+      <text x="92" y="${(yVih+yVil)/2+3}"   fill="#febc2e" font-size="7" font-family="monospace">FORB</text>
+      <text x="92" y="${(yVil+yVol)/2+3}"   fill="#5b9bd5" font-size="7" font-family="monospace" opacity=".7">NML</text>
+      <text x="92" y="${(yVol+y(0))/2+3}"   fill="#5b9bd5" font-size="7" font-family="monospace">LOW</text>
+    </svg>
+  `;
+}
+
+// ── Timing waveform SVG ────────────────────────────────────────────────────
+function renderWaveform(periodPs, gateDelayPs) {
+  const W = 340, H = 60;
+  const margin = 10;
+  const scale = (W - 2*margin) / (3 * periodPs);  // show 3 cycles
+
+  // map time in ps → x
+  const tx = t => margin + t * scale;
+
+  // clock waveform
+  let clkPath = `M${tx(0)},${H-10}`;
+  for (let c = 0; c < 3; c++) {
+    const t0 = c * periodPs;
+    const mid = t0 + periodPs * 0.5;
+    const t1 = (c+1) * periodPs;
+    clkPath += ` L${tx(t0)},${H-10} L${tx(t0)},10 L${tx(mid)},10 L${tx(mid)},${H-10} L${tx(t1)},${H-10}`;
+  }
+
+  // gate output delayed by gateDelay
+  const delay = gateDelayPs;
+  let sigPath = `M${tx(0)},${H-10}`;
+  for (let c = 0; c < 3; c++) {
+    const t0 = c * periodPs + delay;
+    const mid = t0 + periodPs * 0.5;
+    const t1 = (c+1) * periodPs + delay;
+    sigPath += ` L${tx(Math.max(0,t0))},${H-10} L${tx(Math.max(0,t0))},${H*0.45} L${tx(Math.min(W/scale,mid))},${H*0.45} L${tx(Math.min(W/scale,mid))},${H-10}`;
+  }
+
+  $('waveform-svg').innerHTML = `
+    <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+      <text x="${margin}" y="8" font-size="7" fill="#3d5a3d" font-family="monospace">CLK</text>
+      <text x="${margin}" y="${H*0.45-2}" font-size="7" fill="#3d5a3d" font-family="monospace">OUT</text>
+      <path d="${clkPath}" fill="none" stroke="#62de61" stroke-width="1.5"/>
+      <path d="${sigPath}" fill="none" stroke="#febc2e" stroke-width="1.2" stroke-dasharray="3,2"/>
+    </svg>
+  `;
+}
+
+// ── Physical parameters grid ────────────────────────────────────────────────
+function renderPhysGrid(n) {
+  const items = [
+    { label: 'Gate Pitch',    val: n.gatePitch + ' nm'  },
+    { label: 'Metal Pitch',   val: n.metalPitch + ' nm' },
+    { label: 'Transistor',    val: n.txType             },
+    { label: 'VDD',           val: n.vdd.toFixed(2) + ' V' },
+    { label: 'Density',       val: (n.density < 1 ? n.density.toFixed(3) : n.density.toFixed(0)) + ' MT/mm²' },
+    { label: 'fmax (typ)',    val: n.fmax.toFixed(1) + ' GHz' },
+  ];
+  $('phys-grid').innerHTML = items.map(it => `
+    <div class="ll-phys-card">
+      <div class="ll-phys-label">${it.label}</div>
+      <div class="ll-phys-val">${it.val}</div>
+    </div>
+  `).join('');
+}
+
+// ── Main update ────────────────────────────────────────────────────────────
+function update() {
+  const n = selectedNode;
+  const vdd = n.vdd;
+
+  // CMOS thresholds
+  const voh = 0.9  * vdd;
+  const vol = 0.1  * vdd;
+  const vih = 0.7  * vdd;
+  const vil = 0.3  * vdd;
+  const nmh = voh - vih;
+  const nml = vil - vol;
+
+  // Voltage labels
+  $('vdd-badge').textContent = 'VDD = ' + vdd.toFixed(2) + 'V';
+  $('mv-voh').textContent = fmtV(voh);
+  $('mv-vol').textContent = fmtV(vol);
+  $('mv-vih').textContent = fmtV(vih);
+  $('mv-vil').textContent = fmtV(vil);
+  $('mv-nmh').textContent = fmtV(nmh);
+  $('mv-nml').textContent = fmtV(nml);
+
+  renderVoltageDiagram(n);
+
+  // Timing
+  const periodPs = 1000 / freq;  // ps  (1 GHz → 1000 ps = 1 ns)
+  const gateDelayPs = n.gateDelay;
+  const fo4Ps = n.fo4;
+  // Real designs use ~60% of the period for logic; the rest goes to
+  // setup time, clock-to-Q, clock skew, and routing overhead.
+  const LOGIC_DERATING = 0.6;
+  const logicBudgetPs = periodPs * LOGIC_DERATING;
+  const logicDepth = Math.floor(logicBudgetPs / fo4Ps);  // FO4 stages (industry standard)
+  const fmaxNode = n.fmax;
+
+  $('tv-period').textContent = fmtPs(periodPs);
+  $('tv-fo4').textContent    = fmtPs(fo4Ps);
+  $('tv-gate').textContent   = fmtPs(gateDelayPs);
+  $('tv-depth').textContent  = logicDepth + ' FO4 stages';
+  $('tv-fmax').textContent   = fmtF(fmaxNode);
+
+  // Feasibility bar
+  const feasPct = Math.min(100, (freq / fmaxNode) * 100);
+  const bar = $('timing-bar');
+  bar.style.width = feasPct + '%';
+  bar.style.background = feasPct > 90 ? '#ff5f57' : feasPct > 70 ? '#febc2e' : '#62de61';
+  $('timing-pct').textContent = feasPct.toFixed(1) + '% of f_max';
+  $('timing-pct').style.color = feasPct > 90 ? '#ff5f57' : feasPct > 70 ? '#febc2e' : '#62de61';
+
+  renderWaveform(periodPs, gateDelayPs);
+
+  // Power
+  const refPdyn  = REF_PDYN[n.label]  || 100;
+  const refPleak = REF_PLEAK[n.label] || 20;
+  // Scale: Pdyn ∝ α · f · VDD² (normalized to α=0.3, f=1GHz, nominal VDD)
+  const vddRef = n.vdd;
+  const pdyn  = refPdyn  * (alpha / 0.3) * (freq / 1.0);
+  const pleak = refPleak * 1.0;  // leakage roughly constant (temp-dependent, not freq)
+  const ptot  = pdyn + pleak;
+
+  $('tv-pdyn').textContent  = pdyn.toFixed(1)  + ' mW/mm²';
+  $('tv-pleak').textContent = pleak.toFixed(1) + ' mW/mm²';
+  $('tv-ptot').textContent  = ptot.toFixed(1)  + ' mW/mm²';
+
+  const dynPct = (pdyn / ptot * 100).toFixed(0);
+  $('split-dyn').style.width  = dynPct + '%';
+  $('split-leak').style.width = (100 - dynPct) + '%';
+
+  // Gate count
+  // density is in MT/mm² → multiply by 1e6 to get transistors/mm², then × area
+  const txTotal    = n.density * 1e6 * dieArea;          // total transistors
+  const gatesTotal = txTotal / 4;                         // NAND2-eq (4 tx/gate)
+  const critDepth  = logicDepth;  // FO4 stages with 60% derating
+  const pipelines  = Math.round(gatesTotal / Math.max(1, critDepth));
+  const activePerCycle = gatesTotal * alpha;
+  const switchPerSec   = activePerCycle * freq * 1e9;
+
+  $('tv-tx-total').textContent    = fmtCount(txTotal);
+  $('tv-gates-total').textContent = fmtCount(gatesTotal) + ' gates';
+  $('tv-crit-depth').textContent  = critDepth + ' FO4 stages';
+  $('tv-logic-budget').textContent = fmtPs(logicBudgetPs);
+  $('tv-pipelines').textContent   = fmtCount(pipelines);
+  $('tv-gates-active').textContent = fmtCount(activePerCycle) + ' gates';
+  $('tv-switch-rate').textContent  = fmtCount(switchPerSec) + ' switches/s';
+
+  // Gate utilisation bars
+  const critPct   = Math.min(100, (critDepth / gatesTotal) * 1e5).toFixed(4);  // depth vs total (illustrative)
+  const activePct = (alpha * 100).toFixed(0);
+  const idlePct   = (100 - activePct).toFixed(0);
+  $('gate-bars').innerHTML = `
+    <div class="ll-gbar-row">
+      <span class="ll-gbar-label">Active (α=${alpha.toFixed(2)})</span>
+      <div class="ll-gbar-track">
+        <div class="ll-gbar-fill ll-gbar-active" style="width:${activePct}%"></div>
+      </div>
+      <span class="ll-gbar-pct">${activePct}%</span>
+    </div>
+    <div class="ll-gbar-row">
+      <span class="ll-gbar-label">Idle</span>
+      <div class="ll-gbar-track">
+        <div class="ll-gbar-fill ll-gbar-idle" style="width:${idlePct}%"></div>
+      </div>
+      <span class="ll-gbar-pct">${idlePct}%</span>
+    </div>
+    <div class="ll-gbar-row">
+      <span class="ll-gbar-label">Critical path</span>
+      <div class="ll-gbar-track">
+        <div class="ll-gbar-fill ll-gbar-crit" style="width:${Math.min(100,(critDepth/1000)*100).toFixed(1)}%"></div>
+      </div>
+      <span class="ll-gbar-pct">${critDepth} deep</span>
+    </div>
+  `;
+
+  updateGateType();
+
+  renderPhysGrid(n);
+
+  // Highlight active row in comparison table
+  document.querySelectorAll('#node-table-body tr').forEach(tr => {
+    tr.classList.toggle('ll-row-active', tr.dataset.label === n.label);
+  });
+}
+
+// ── Slider ↔ input sync ────────────────────────────────────────────────────
+function syncSlider(rangeId, inputId, setter) {
+  const range = $(rangeId), inp = $(inputId);
+  range.addEventListener('input', () => {
+    inp.value = range.value;
+    setter(parseFloat(range.value));
+    update();
+  });
+  inp.addEventListener('input', () => {
+    const v = parseFloat(inp.value);
+    if (!isNaN(v)) {
+      range.value = v;
+      setter(v);
+      update();
+    }
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+buildNodeBtns();
+buildNodeTable();
+buildGateTypeBtns();
+syncSlider('freq-range',  'freq-input',  v => { freq = v; });
+syncSlider('alpha-range', 'alpha-input', v => { alpha = v; });
+syncSlider('area-range',  'area-input',  v => { dieArea = v; });
+update();
+</script>

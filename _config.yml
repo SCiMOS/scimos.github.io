@@ -1,0 +1,32 @@
+title: SCiMOS
+description: A reference for GPU architecture, CUDA, and deep learning performance.
+baseurl: ""
+url: ""
+
+collections:
+  glossary:
+    output: true
+    permalink: /:path/
+
+defaults:
+  - scope:
+      path: ""
+      type: glossary
+    values:
+      layout: entry
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: highlight
+    block:
+      line_numbers: false
+
+sass:
+  style: compressed

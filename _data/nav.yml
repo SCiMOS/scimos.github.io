@@ -1,0 +1,49 @@
+- label: Device Hardware
+  slug: device-hardware
+  entries:
+    - title: CUDA Core
+      slug: cuda-core
+    - title: Streaming Multiprocessor
+      slug: streaming-multiprocessor
+    - title: Tensor Core
+      slug: tensor-core
+
+- label: Device Software
+  slug: device-software
+  entries:
+    - title: CUDA
+      slug: cuda
+
+- label: Host Software
+  slug: host-software
+  entries:
+    - title: PyTorch
+      slug: pytorch
+
+- label: Performance
+  slug: performance
+  entries:
+    - title: Memory Bandwidth
+      slug: memory-bandwidth
+    - title: GPU Performance Guide
+      slug: gpu-performance-guide
+
+- label: Reference
+  slug: reference
+  entries:
+    - title: Markdown Cheatsheet
+      slug: markdown-cheatsheet
+    - title: Logic Levels Reference
+      slug: logic-levels-reference
+    - title: Creating & Deploying Pages
+      slug: creating-pages
+
+- label: Tools
+  slug: tools
+  entries:
+    - title: Number Formats
+      slug: number-formats
+      href: /tools/number-formats/
+    - title: Logic Levels
+      slug: logic-levels
+      href: /tools/logic-levels/

@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 460" width="680" height="460">
+  <rect width="680" height="460" fill="#070908"/>
+  <defs>
+    <style>
+      .mono { font-family: 'JetBrains Mono', 'Consolas', monospace; }
+      .t-green { fill: #62de61; }
+      .t-dim { fill: #6a8a6a; }
+      .t-muted { fill: #3d5a3d; }
+      .t-white { fill: #c8d8c8; }
+      .t-blue { fill: #5b9bd5; }
+    </style>
+  </defs>
+
+  <!-- Title bar -->
+  <rect x="0" y="0" width="680" height="32" fill="#0d0f0d"/>
+  <circle cx="16" cy="16" r="5" fill="#ff5f57"/>
+  <circle cx="32" cy="16" r="5" fill="#febc2e"/>
+  <circle cx="48" cy="16" r="5" fill="#28c840"/>
+  <text x="340" y="21" text-anchor="middle" class="mono t-muted" font-size="11">gpu-architecture.svg — diagram</text>
+
+  <!-- GPU Die outline -->
+  <rect x="30" y="48" width="620" height="395" rx="6" fill="#0a0c0a" stroke="#2d402d" stroke-width="1.5"/>
+  <text x="340" y="70" text-anchor="middle" class="mono t-green" font-size="13" font-weight="bold">NVIDIA GPU Die  (Hopper / H100)</text>
+
+  <!-- SM grid (6x2 = 12 SMs shown, representing ~132 total) -->
+  <!-- Row 1 -->
+  <rect x="50"  y="82" width="88" height="70" rx="3" fill="#111411" stroke="#1e4a1e" stroke-width="1"/>
+  <text x="94"  y="100" text-anchor="middle" class="mono t-green" font-size="10" font-weight="bold">SM 0</text>
+  <text x="94"  y="114" text-anchor="middle" class="mono t-dim"   font-size="9">128 CUDA</text>
+  <text x="94"  y="126" text-anchor="middle" class="mono t-dim"   font-size="9">4 Tensor</text>
+  <text x="94"  y="138" text-anchor="middle" class="mono t-muted" font-size="8">256KB SMEM</text>
+
+  <rect x="152" y="82" width="88" height="70" rx="3" fill="#111411" stroke="#1e4a1e" stroke-width="1"/>
+  <text x="196" y="100" text-anchor="middle" class="mono t-green" font-size="10" font-weight="bold">SM 1</text>
+  <text x="196" y="114" text-anchor="middle" class="mono t-dim"   font-size="9">128 CUDA</text>
+  <text x="196" y="126" text-anchor="middle" class="mono t-dim"   font-size="9">4 Tensor</text>
+  <text x="196" y="138" text-anchor="middle" class="mono t-muted" font-size="8">256KB SMEM</text>
+
+  <rect x="254" y="82" width="88" height="70" rx="3" fill="#111411" stroke="#1e4a1e" stroke-width="1"/>
+  <text x="298" y="100" text-anchor="middle" class="mono t-green" font-size="10" font-weight="bold">SM 2</text>
+  <text x="298" y="114" text-anchor="middle" class="mono t-dim"   font-size="9">128 CUDA</text>
+  <text x="298" y="126" text-anchor="middle" class="mono t-dim"   font-size="9">4 Tensor</text>
+  <text x="298" y="138" text-anchor="middle" class="mono t-muted" font-size="8">256KB SMEM</text>
+
+  <rect x="356" y="82" width="88" height="70" rx="3" fill="#111411" stroke="#1e4a1e" stroke-width="1"/>
+  <text x="400" y="100" text-anchor="middle" class="mono t-green" font-size="10" font-weight="bold">SM 3</text>
+  <text x="400" y="114" text-anchor="middle" class="mono t-dim"   font-size="9">128 CUDA</text>
+  <text x="400" y="126" text-anchor="middle" class="mono t-dim"   font-size="9">4 Tensor</text>
+  <text x="400" y="138" text-anchor="middle" class="mono t-muted" font-size="8">256KB SMEM</text>
+
+  <rect x="458" y="82" width="88" height="70" rx="3" fill="#111411" stroke="#1e4a1e" stroke-width="1"/>
+  <text x="502" y="100" text-anchor="middle" class="mono t-green" font-size="10" font-weight="bold">SM 4</text>
+  <text x="502" y="114" text-anchor="middle" class="mono t-dim"   font-size="9">128 CUDA</text>
+  <text x="502" y="126" text-anchor="middle" class="mono t-dim"   font-size="9">4 Tensor</text>
+  <text x="502" y="138" text-anchor="middle" class="mono t-muted" font-size="8">256KB SMEM</text>
+
+  <rect x="560" y="82" width="88" height="70" rx="3" fill="#111411" stroke="#1e4a1e" stroke-width="1"/>
+  <text x="604" y="100" text-anchor="middle" class="mono t-green" font-size="10" font-weight="bold">SM 5</text>
+  <text x="604" y="114" text-anchor="middle" class="mono t-dim"   font-size="9">128 CUDA</text>
+  <text x="604" y="126" text-anchor="middle" class="mono t-dim"   font-size="9">4 Tensor</text>
+  <text x="604" y="138" text-anchor="middle" class="mono t-muted" font-size="8">256KB SMEM</text>
+
+  <!-- Row 2 -->
+  <rect x="50"  y="162" width="88" height="70" rx="3" fill="#111411" stroke="#1e4a1e" stroke-width="1"/>
+  <text x="94"  y="200" text-anchor="middle" class="mono t-dim" font-size="9">SM 6–11</text>
+  <rect x="152" y="162" width="88" height="70" rx="3" fill="#111411" stroke="#1e4a1e" stroke-width="1"/>
+  <rect x="254" y="162" width="88" height="70" rx="3" fill="#111411" stroke="#1e4a1e" stroke-width="1"/>
+  <rect x="356" y="162" width="88" height="70" rx="3" fill="#111411" stroke="#1e4a1e" stroke-width="1"/>
+  <rect x="458" y="162" width="88" height="70" rx="3" fill="#111411" stroke="#1e4a1e" stroke-width="1"/>
+  <rect x="560" y="162" width="88" height="70" rx="3" fill="#111411" stroke="#1e4a1e" stroke-width="1"/>
+
+  <!-- Ellipsis row -->
+  <text x="340" y="258" text-anchor="middle" class="mono t-muted" font-size="14">· · · 120 more SMs · · ·</text>
+
+  <!-- L2 Cache bar -->
+  <rect x="50" y="272" width="598" height="36" rx="3" fill="#0f1a0f" stroke="#2d402d" stroke-width="1"/>
+  <text x="340" y="286" text-anchor="middle" class="mono t-dim" font-size="11" font-weight="bold">L2 Cache</text>
+  <text x="340" y="300" text-anchor="middle" class="mono t-muted" font-size="9">50 MB  ·  6,144-bit interface</text>
+
+  <!-- HBM lanes -->
+  <rect x="50"  y="318" width="88" height="50" rx="3" fill="#0d1520" stroke="#1e3050" stroke-width="1"/>
+  <text x="94"  y="340" text-anchor="middle" class="mono t-blue" font-size="10" font-weight="bold">HBM3</text>
+  <text x="94"  y="355" text-anchor="middle" class="mono t-dim"  font-size="9">Stack 0</text>
+
+  <rect x="152" y="318" width="88" height="50" rx="3" fill="#0d1520" stroke="#1e3050" stroke-width="1"/>
+  <text x="196" y="340" text-anchor="middle" class="mono t-blue" font-size="10" font-weight="bold">HBM3</text>
+  <text x="196" y="355" text-anchor="middle" class="mono t-dim"  font-size="9">Stack 1</text>
+
+  <rect x="254" y="318" width="88" height="50" rx="3" fill="#0d1520" stroke="#1e3050" stroke-width="1"/>
+  <text x="298" y="340" text-anchor="middle" class="mono t-blue" font-size="10" font-weight="bold">HBM3</text>
+  <text x="298" y="355" text-anchor="middle" class="mono t-dim"  font-size="9">Stack 2</text>
+
+  <rect x="356" y="318" width="88" height="50" rx="3" fill="#0d1520" stroke="#1e3050" stroke-width="1"/>
+  <text x="400" y="340" text-anchor="middle" class="mono t-blue" font-size="10" font-weight="bold">HBM3</text>
+  <text x="400" y="355" text-anchor="middle" class="mono t-dim"  font-size="9">Stack 3</text>
+
+  <rect x="458" y="318" width="88" height="50" rx="3" fill="#0d1520" stroke="#1e3050" stroke-width="1"/>
+  <text x="502" y="340" text-anchor="middle" class="mono t-blue" font-size="10" font-weight="bold">HBM3</text>
+  <text x="502" y="355" text-anchor="middle" class="mono t-dim"  font-size="9">Stack 4</text>
+
+  <rect x="560" y="318" width="88" height="50" rx="3" fill="#0d1520" stroke="#1e3050" stroke-width="1"/>
+  <text x="604" y="340" text-anchor="middle" class="mono t-blue" font-size="10" font-weight="bold">HBM3</text>
+  <text x="604" y="355" text-anchor="middle" class="mono t-dim"  font-size="9">Stack 5</text>
+
+  <!-- NVLink + PCIe bar -->
+  <rect x="50" y="378" width="280" height="32" rx="3" fill="#1a0f1a" stroke="#3d1e5a" stroke-width="1"/>
+  <text x="190" y="391" text-anchor="middle" class="mono" font-size="10" font-weight="bold" fill="#b07ad5">NVLink 4.0  ·  900 GB/s</text>
+  <text x="190" y="403" text-anchor="middle" class="mono t-muted" font-size="8">18 links × 50 GB/s</text>
+
+  <rect x="368" y="378" width="280" height="32" rx="3" fill="#0f1510" stroke="#1e3020" stroke-width="1"/>
+  <text x="508" y="391" text-anchor="middle" class="mono t-dim" font-size="10" font-weight="bold">PCIe 5.0 x16  ·  128 GB/s</text>
+  <text x="508" y="403" text-anchor="middle" class="mono t-muted" font-size="8">host ↔ device interconnect</text>
+
+  <!-- Bottom legend -->
+  <rect x="50"  y="422" width="10" height="10" fill="#1e4a1e" stroke="#3a8a3a" stroke-width="0.5"/>
+  <text x="66" y="432" class="mono t-dim" font-size="9">Compute (SM)</text>
+  <rect x="170" y="422" width="10" height="10" fill="#0d1520" stroke="#1e3050" stroke-width="0.5"/>
+  <text x="186" y="432" class="mono t-dim" font-size="9">HBM Memory</text>
+  <rect x="290" y="422" width="10" height="10" fill="#1a0f1a" stroke="#3d1e5a" stroke-width="0.5"/>
+  <text x="306" y="432" class="mono t-dim" font-size="9">NVLink</text>
+  <rect x="380" y="422" width="10" height="10" fill="#0f1510" stroke="#1e3020" stroke-width="0.5"/>
+  <text x="396" y="432" class="mono t-dim" font-size="9">PCIe</text>
+</svg>

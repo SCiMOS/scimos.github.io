@@ -1,0 +1,51 @@
+<aside class="sidebar">
+  <a href="{{ '/' | relative_url }}" class="logo">
+    <span class="logo-bracket">[</span><span class="logo-text">SC<span class="logo-blink">i</span>MOS</span><span class="logo-bracket">]</span>
+  </a>
+
+  <div class="sidebar-label">$ ls -la ./topics</div>
+
+  <nav>
+    {% for category in site.data.nav %}
+      {% assign is_cat_active = false %}
+      {% if page.category == category.slug %}
+        {% assign is_cat_active = true %}
+      {% endif %}
+      {% for entry in category.entries %}
+        {% if entry.href and page.url == entry.href %}
+          {% assign is_cat_active = true %}
+        {% endif %}
+      {% endfor %}
+
+      <div class="nav-category{% if is_cat_active %} active{% endif %}">
+        <button class="category-header" onclick="toggleCategory(this)" aria-expanded="true">
+          <span class="chevron">▼</span>
+          <span class="category-prefix">./</span>{{ category.label }}
+        </button>
+        <ul class="entry-list">
+          {% for entry in category.entries %}
+            {% if entry.href %}
+              {% assign entry_href = entry.href %}
+              {% assign is_active = false %}
+              {% if page.url == entry.href %}{% assign is_active = true %}{% endif %}
+            {% else %}
+              {% assign entry_href = "/" | append: category.slug | append: "/" | append: entry.slug | append: "/" %}
+              {% assign is_active = false %}
+              {% if page.category == category.slug and page.slug == entry.slug %}
+                {% assign is_active = true %}
+              {% endif %}
+            {% endif %}
+            <li>
+              <a href="{{ entry_href | relative_url }}"
+                 class="entry-link{% if is_active %} active{% endif %}">
+                <span class="entry-prefix">├─ </span>{{ entry.title }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
+  </nav>
+
+  <div class="sidebar-footer"><span class="cursor-blink">█</span></div>
+</aside>

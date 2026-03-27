@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 380" width="600" height="380">
+  <rect width="600" height="380" fill="#070908"/>
+  <defs>
+    <style>
+      .mono { font-family: 'JetBrains Mono', 'Consolas', monospace; }
+    </style>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#6a8a6a"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#62de61"/>
+    </marker>
+  </defs>
+
+  <!-- Title bar -->
+  <rect x="0" y="0" width="600" height="32" fill="#0d0f0d"/>
+  <circle cx="16" cy="16" r="5" fill="#ff5f57"/>
+  <circle cx="32" cy="16" r="5" fill="#febc2e"/>
+  <circle cx="48" cy="16" r="5" fill="#28c840"/>
+  <text x="300" y="21" text-anchor="middle" class="mono" fill="#3d5a3d" font-size="11">roofline-model.svg — performance analysis</text>
+
+  <!-- Axes -->
+  <!-- Y axis -->
+  <line x1="80" y1="50" x2="80" y2="315" stroke="#2d402d" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- X axis -->
+  <line x1="80" y1="315" x2="555" y2="315" stroke="#2d402d" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Axis labels -->
+  <text x="22" y="185" class="mono" fill="#6a8a6a" font-size="11" transform="rotate(-90,22,185)" text-anchor="middle">Performance (TFLOPS)</text>
+  <text x="318" y="348" text-anchor="middle" class="mono" fill="#6a8a6a" font-size="11">Arithmetic Intensity (FLOP/byte)</text>
+
+  <!-- Y tick labels -->
+  <text x="72" y="319" text-anchor="end" class="mono" fill="#3d5a3d" font-size="9">0</text>
+  <text x="72" y="261" text-anchor="end" class="mono" fill="#3d5a3d" font-size="9">50</text>
+  <text x="72" y="202" text-anchor="end" class="mono" fill="#3d5a3d" font-size="9">100</text>
+  <text x="72" y="143" text-anchor="end" class="mono" fill="#3d5a3d" font-size="9">200</text>
+  <text x="72" y="84"  text-anchor="end" class="mono" fill="#3d5a3d" font-size="9">312</text>
+
+  <!-- X tick labels -->
+  <text x="80"  y="330" text-anchor="middle" class="mono" fill="#3d5a3d" font-size="9">0</text>
+  <text x="175" y="330" text-anchor="middle" class="mono" fill="#3d5a3d" font-size="9">2</text>
+  <text x="270" y="330" text-anchor="middle" class="mono" fill="#3d5a3d" font-size="9">4</text>
+  <text x="365" y="330" text-anchor="middle" class="mono" fill="#3d5a3d" font-size="9">8</text>
+  <text x="460" y="330" text-anchor="middle" class="mono" fill="#3d5a3d" font-size="9">16</text>
+  <text x="540" y="330" text-anchor="middle" class="mono" fill="#3d5a3d" font-size="9">32+</text>
+
+  <!-- Grid lines (subtle) -->
+  <line x1="80" y1="261" x2="550" y2="261" stroke="#1e2a1e" stroke-width="0.5" stroke-dasharray="3,4"/>
+  <line x1="80" y1="202" x2="550" y2="202" stroke="#1e2a1e" stroke-width="0.5" stroke-dasharray="3,4"/>
+  <line x1="80" y1="143" x2="550" y2="143" stroke="#1e2a1e" stroke-width="0.5" stroke-dasharray="3,4"/>
+  <line x1="80" y1="84"  x2="550" y2="84"  stroke="#1e2a1e" stroke-width="0.5" stroke-dasharray="3,4"/>
+  <line x1="175" y1="50" x2="175" y2="315" stroke="#1e2a1e" stroke-width="0.5" stroke-dasharray="3,4"/>
+  <line x1="270" y1="50" x2="270" y2="315" stroke="#1e2a1e" stroke-width="0.5" stroke-dasharray="3,4"/>
+  <line x1="365" y1="50" x2="365" y2="315" stroke="#1e2a1e" stroke-width="0.5" stroke-dasharray="3,4"/>
+  <line x1="460" y1="50" x2="460" y2="315" stroke="#1e2a1e" stroke-width="0.5" stroke-dasharray="3,4"/>
+
+  <!-- Roofline: memory-bound slope (up to ridge point at x=270,y=84) -->
+  <line x1="80" y1="315" x2="290" y2="84" stroke="#62de61" stroke-width="2"/>
+  <!-- Roofline: compute ceiling (flat from ridge to right) -->
+  <line x1="290" y1="84" x2="550" y2="84" stroke="#62de61" stroke-width="2"/>
+
+  <!-- Ridge point marker -->
+  <circle cx="290" cy="84" r="5" fill="#62de61" stroke="#0a0c0a" stroke-width="1.5"/>
+  <text x="298" y="78" class="mono" fill="#62de61" font-size="9">ridge point</text>
+  <text x="298" y="90" class="mono" fill="#3d5a3d" font-size="8">~6 FLOP/byte</text>
+
+  <!-- Memory bound label -->
+  <text x="118" y="230" class="mono" fill="#6a8a6a" font-size="10" transform="rotate(-52, 118, 230)">memory-bound</text>
+
+  <!-- Compute bound label -->
+  <text x="380" y="76" class="mono" fill="#6a8a6a" font-size="10">compute-bound ceiling (312 TFLOPS)</text>
+
+  <!-- Memory bandwidth ceiling label -->
+  <text x="82" y="180" class="mono" fill="#3d5a3d" font-size="9">slope = mem BW</text>
+  <text x="82" y="191" class="mono" fill="#3d5a3d" font-size="9">(3,350 GB/s)</text>
+
+  <!-- Workload dots -->
+  <!-- Attention (memory bound) -->
+  <circle cx="145" cy="245" r="7" fill="#1e4a1e" stroke="#3a8a3a" stroke-width="1.5"/>
+  <text x="156" y="242" class="mono" fill="#6a8a6a" font-size="9">Attention</text>
+  <text x="156" y="253" class="mono" fill="#3d5a3d" font-size="8">(AI=0.5)</text>
+
+  <!-- GEMM (compute bound) -->
+  <circle cx="430" cy="100" r="7" fill="#62de61" stroke="#7eff7d" stroke-width="1.5"/>
+  <text x="441" y="97" class="mono" fill="#62de61" font-size="9">GEMM</text>
+  <text x="441" y="108" class="mono" fill="#3d5a3d" font-size="8">(AI=14)</text>
+
+  <!-- LayerNorm (memory bound) -->
+  <circle cx="110" cy="290" r="7" fill="#1e4a1e" stroke="#3a8a3a" stroke-width="1.5"/>
+  <text x="121" y="287" class="mono" fill="#6a8a6a" font-size="9">LayerNorm</text>
+  <text x="121" y="298" class="mono" fill="#3d5a3d" font-size="8">(AI=0.1)</text>
+
+  <!-- Conv2D -->
+  <circle cx="355" cy="105" r="7" fill="#62de61" stroke="#7eff7d" stroke-width="1.5"/>
+  <text x="366" y="102" class="mono" fill="#62de61" font-size="9">Conv2D</text>
+  <text x="366" y="113" class="mono" fill="#3d5a3d" font-size="8">(AI=8)</text>
+
+  <!-- Legend -->
+  <circle cx="90"  cy="363" r="5" fill="#1e4a1e" stroke="#3a8a3a" stroke-width="1.5"/>
+  <text x="100" y="367" class="mono" fill="#6a8a6a" font-size="9">memory-bound kernel</text>
+  <circle cx="280" cy="363" r="5" fill="#62de61" stroke="#7eff7d" stroke-width="1.5"/>
+  <text x="290" y="367" class="mono" fill="#62de61" font-size="9">compute-bound kernel</text>
+  <line x1="430" y1="363" x2="460" y2="363" stroke="#62de61" stroke-width="2"/>
+  <text x="466" y="367" class="mono" fill="#6a8a6a" font-size="9">roofline</text>
+</svg>

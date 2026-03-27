@@ -1,0 +1,317 @@
+.page {
+  padding: 32px 48px 64px;
+  max-width: 860px;
+
+  @media (max-width: 768px) { padding: 20px 16px 48px; }
+}
+
+/* ── Breadcrumb ── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  margin-bottom: 16px;
+
+  .bc-link    { color: $green-dim; text-decoration: none; &:hover { color: $green; } }
+  .bc-sep     { color: $text-muted; }
+  .bc-cat     { color: $text-dim; }
+  .bc-current { color: $green; }
+}
+
+/* ── Command bar ── */
+.cmd-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 10px 16px;
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 4px;
+  margin-bottom: 32px;
+}
+
+.prompt-g  { color: $green;    font-weight: 600; }
+.ps        { color: $text-dim; }
+.pp        { color: $blue; }
+.pd        { color: $text-dim; margin-left: 2px; }
+.cmd-text  { color: $text; }
+
+/* ── Prose ── */
+.prose {
+  line-height: 1.75;
+  font-size: 15px;
+  color: $text;
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: $green;
+    margin-bottom: 20px;
+    line-height: 1.3;
+    letter-spacing: -.02em;
+    padding-bottom: 12px;
+    border-bottom: 1px solid $border;
+
+    @media (max-width: 768px) { font-size: 22px; }
+  }
+
+  h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: $text;
+    margin: 36px 0 14px;
+    padding-left: 12px;
+    border-left: 3px solid $green;
+  }
+
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: $green-dim;
+    margin: 24px 0 10px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  p {
+    margin-bottom: 16px;
+    color: $text;
+    font-size: 14px;
+    font-family: $font-mono;
+  }
+
+  strong { color: $green-bright; font-weight: 600; }
+  em     { color: $text-dim; font-style: italic; }
+
+  a {
+    color: $green;
+    text-decoration: none;
+    border-bottom: 1px solid $green-muted;
+    transition: border-color .15s;
+    &:hover { border-color: $green; }
+  }
+
+  /* Images */
+  img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid $border;
+    border-radius: 4px;
+    margin: 24px 0;
+    background: #070908;
+  }
+
+  p > img { margin: 0; }
+  p:has(img) { margin-bottom: 4px; }
+
+  /* Code */
+  pre {
+    background: #070908;
+    border: 1px solid $border;
+    border-radius: 4px;
+    padding: 20px;
+    overflow-x: auto;
+    margin: 20px 0;
+
+    code {
+      font-family: $font-mono;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #b8d8b8;
+      background: none;
+      padding: 0;
+      border: none;
+    }
+  }
+
+  code {
+    font-family: $font-mono;
+    font-size: 13px;
+    color: $green;
+    background: rgba(98, 222, 97, .08);
+    padding: 2px 6px;
+    border-radius: 2px;
+    border: 1px solid $green-muted;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 13px;
+  }
+
+  th {
+    background: #0f120f;
+    color: $green-dim;
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 14px;
+    border: 1px solid $border;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-size: 11px;
+  }
+
+  td {
+    padding: 9px 14px;
+    border: 1px solid $border;
+    color: $text;
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td { background: rgba(255,255,255,.015); }
+  tr:hover td            { background: rgba(98, 222, 97, .04); }
+
+  /* Lists */
+  ul, ol {
+    margin: 12px 0 16px;
+    padding-left: 24px;
+  }
+
+  li {
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: $text;
+    &::marker { color: $green-dim; }
+  }
+
+  /* Blockquote */
+  blockquote {
+    border-left: 3px solid $green-dim;
+    padding: 12px 16px;
+    margin: 20px 0;
+    background: $bg-card;
+    color: $text-dim;
+    font-style: italic;
+
+    p { margin-bottom: 0; }
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid $border;
+    margin: 32px 0;
+  }
+
+  /* Task lists */
+  ul.task-list {
+    list-style: none;
+    padding-left: 4px;
+
+    li {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+  }
+
+  input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 13px;
+    height: 13px;
+    border: 1px solid $green-dim;
+    border-radius: 2px;
+    background: $bg-card;
+    flex-shrink: 0;
+    position: relative;
+    top: 2px;
+    cursor: default;
+
+    &:checked {
+      background: $green-muted;
+      border-color: $green;
+
+      &::after {
+        content: '✓';
+        position: absolute;
+        top: -2px;
+        left: 1px;
+        font-size: 10px;
+        color: $green;
+        line-height: 1;
+      }
+    }
+  }
+
+  /* Definition lists */
+  dl { margin: 16px 0; }
+
+  dt {
+    color: $green;
+    font-weight: 600;
+    font-size: 14px;
+    margin-top: 12px;
+  }
+
+  dd {
+    color: $text;
+    font-size: 14px;
+    margin-left: 20px;
+    padding-left: 12px;
+    border-left: 2px solid $green-muted;
+    margin-bottom: 4px;
+  }
+
+  /* Abbreviation underline */
+  abbr {
+    text-decoration: underline dotted $green-dim;
+    cursor: help;
+  }
+}
+
+/* ── Pagination ── */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid $border;
+  gap: 16px;
+
+  @media (max-width: 768px) { flex-direction: column; }
+}
+
+.pag-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: border-color .2s, background .2s;
+  min-width: 180px;
+
+  &:hover {
+    border-color: $green-dim;
+    background: rgba(98, 222, 97, .04);
+  }
+
+  &.next { flex-direction: row-reverse; }
+
+  @media (max-width: 768px) { min-width: unset; }
+}
+
+.pag-arrow { font-size: 18px; color: $green-dim; flex-shrink: 0; }
+
+.pag-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pag-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: $text-muted;
+  letter-spacing: .1em;
+}
+
+.pag-title { font-size: 13px; color: $text; }

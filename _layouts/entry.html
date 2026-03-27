@@ -1,0 +1,70 @@
+---
+layout: default
+---
+<div class="page">
+  <div class="breadcrumb">
+    <a href="{{ '/' | relative_url }}" class="bc-link">~/glossary</a>
+    <span class="bc-sep">/</span>
+    <span class="bc-cat">
+      {% for cat in site.data.nav %}
+        {% if cat.slug == page.category %}{{ cat.label }}{% endif %}
+      {% endfor %}
+    </span>
+    <span class="bc-sep">/</span>
+    <span class="bc-current">{{ page.slug }}</span>
+  </div>
+
+  <div class="cmd-bar">
+    <span class="prompt-g">user@gpu-node</span><span class="ps">:</span><span class="pp">~/glossary/{{ page.category }}</span><span class="pd">$</span>
+    <span class="cmd-text"> cat {{ page.slug }}.md</span>
+  </div>
+
+  <article class="prose">
+    {{ content }}
+  </article>
+
+  <div class="pagination">
+    {% assign cat_data = nil %}
+    {% for cat in site.data.nav %}
+      {% if cat.slug == page.category %}
+        {% assign cat_data = cat %}
+      {% endif %}
+    {% endfor %}
+
+    {% if cat_data %}
+      {% assign entries = cat_data.entries %}
+      {% assign current_index = -1 %}
+      {% for entry in entries %}
+        {% if entry.slug == page.slug %}
+          {% assign current_index = forloop.index0 %}
+        {% endif %}
+      {% endfor %}
+
+      {% if current_index > 0 %}
+        {% assign prev_index = current_index | minus: 1 %}
+        {% assign prev_entry = entries[prev_index] %}
+        <a href="{{ page.category | prepend: '/' | append: '/' | append: prev_entry.slug | relative_url }}" class="pag-link prev">
+          <span class="pag-arrow">←</span>
+          <div class="pag-info">
+            <span class="pag-label">prev</span>
+            <span class="pag-title">{{ prev_entry.title }}</span>
+          </div>
+        </a>
+      {% else %}
+        <div></div>
+      {% endif %}
+
+      {% assign next_index = current_index | plus: 1 %}
+      {% if next_index < entries.size %}
+        {% assign next_entry = entries[next_index] %}
+        <a href="{{ page.category | prepend: '/' | append: '/' | append: next_entry.slug | relative_url }}" class="pag-link next">
+          <div class="pag-info">
+            <span class="pag-label">next</span>
+            <span class="pag-title">{{ next_entry.title }}</span>
+          </div>
+          <span class="pag-arrow">→</span>
+        </a>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>

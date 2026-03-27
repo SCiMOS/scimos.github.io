@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>{% include head.html %}</head>
+<body>
+  <div class="layout">
+    {% include sidebar.html %}
+    <main class="content">
+      {{ content }}
+    </main>
+  </div>
+  {% include terminal.html %}
+  <script>
+    function toggleCategory(btn) {
+      var ul = btn.nextElementSibling;
+      var chevron = btn.querySelector('.chevron');
+      var expanded = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!expanded));
+      ul.style.display = expanded ? 'none' : '';
+      chevron.textContent = expanded ? '▶' : '▼';
+    }
+  </script>
+</body>
+</html>

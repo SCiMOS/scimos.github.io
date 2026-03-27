@@ -1,0 +1,867 @@
+// ── Tool page shell ───────────────────────────────────
+.tool-page {
+  padding: 32px 40px 80px;
+  max-width: 1080px;
+
+  @media (max-width: 768px) { padding: 20px 16px 56px; }
+}
+
+.tool-hero {
+  margin-bottom: 28px;
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: $green;
+    margin: 14px 0 6px;
+    letter-spacing: -.02em;
+  }
+
+  p {
+    font-size: 13px;
+    color: $text-dim;
+    line-height: 1.6;
+  }
+}
+
+// ── Preset buttons ────────────────────────────────────
+.presets-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: $text-muted;
+  margin-bottom: 8px;
+}
+
+.presets-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 28px;
+}
+
+.preset-btn {
+  background: $bg-card;
+  border: 1px solid $border;
+  color: $text-dim;
+  font-family: $font-mono;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color .12s, border-color .12s, background .12s;
+
+  &:hover {
+    color: $green;
+    border-color: $green-dim;
+    background: rgba(98,222,97,.04);
+  }
+  &:active { transform: translateY(1px); }
+}
+
+// ── 32-bit visualizer ─────────────────────────────────
+.bits-section {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 4px;
+  padding: 18px 20px 14px;
+  margin-bottom: 28px;
+  overflow-x: auto;
+}
+
+.bits-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: $text-muted;
+}
+
+.bit-grid {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 6px;
+  min-width: max-content;
+}
+
+.bit-btn {
+  width: 21px;
+  height: 21px;
+  border: 1px solid $border;
+  border-radius: 2px;
+  background: #070908;
+  color: $text-muted;
+  font-family: $font-mono;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .08s, color .08s, border-color .08s;
+  padding: 0;
+  line-height: 1;
+
+  &:hover { border-color: $border-bright; color: $text; }
+
+  &.bit-set {
+    &.bit-sign { background: rgba(255,95,87,.18);  color: #ff5f57; border-color: #ff5f57; }
+    &.bit-exp  { background: rgba(254,188,46,.18); color: #febc2e; border-color: #febc2e; }
+    &.bit-mant { background: rgba(98,222,97,.18);  color: $green;  border-color: $green;  }
+  }
+
+  &.bit-sign:hover { border-color: #ff5f57; }
+  &.bit-exp:hover  { border-color: #febc2e; }
+  &.bit-mant:hover { border-color: $green-dim; }
+}
+
+// gap every 4 bits
+.bit-btn:nth-child(4n+1):not(:last-child) { margin-left: 4px; }
+
+.bit-annotations {
+  display: flex;
+  gap: 2px;
+  font-size: 9px;
+  min-width: max-content;
+  margin-top: 4px;
+  align-items: flex-start;
+}
+
+.bit-ann {
+  text-align: center;
+  letter-spacing: .03em;
+  line-height: 1.3;
+
+  &.ann-sign {
+    width: 21px;
+    color: #ff5f57;
+    flex-shrink: 0;
+  }
+  &.ann-exp {
+    // 8 bits × 21px + 7 × 2px gap + extra 4px nibble gap inside = approx
+    width: calc(8 * 21px + 9 * 2px);
+    color: #febc2e;
+    flex-shrink: 0;
+  }
+  &.ann-mant {
+    flex: 1;
+    color: $green-dim;
+    text-align: left;
+    padding-left: 4px;
+  }
+}
+
+// ── Format groups ─────────────────────────────────────
+.fmt-group {
+  margin-bottom: 24px;
+}
+
+.fmt-group-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: $text-muted;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  &::after { content: ''; flex: 1; height: 1px; background: $border; }
+}
+
+.fmt-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+
+  &.fmt-cards--float {
+    grid-template-columns: 2fr 1fr 1fr;
+    @media (max-width: 900px) { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 560px) { grid-template-columns: 1fr; }
+  }
+}
+
+// ── Format card ───────────────────────────────────────
+.fmt-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: border-color .15s;
+
+  &:hover  { border-color: $border-bright; }
+  &.active { border-color: $green-dim; box-shadow: 0 0 0 1px rgba(58,138,58,.3); }
+}
+
+.fmt-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: #0f120f;
+  border-bottom: 1px solid $border;
+}
+
+.fmt-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: 2px 5px;
+  border-radius: 2px;
+  white-space: nowrap;
+
+  &.b-int   { color: $blue;   background: rgba(91,155,213,.1);  border: 1px solid rgba(91,155,213,.25);  }
+  &.b-fixed { color: $purple; background: rgba(176,122,213,.1); border: 1px solid rgba(176,122,213,.25); }
+  &.b-float { color: $green;  background: rgba(98,222,97,.08);  border: 1px solid $green-muted;          }
+  &.b-misc  { color: #febc2e; background: rgba(254,188,46,.08); border: 1px solid rgba(254,188,46,.2);   }
+}
+
+.fmt-card-name  { font-size: 12px; font-weight: 600; color: $text; flex: 1; }
+.fmt-card-range { font-size: 10px; color: $text-muted; white-space: nowrap; }
+
+.fmt-input-wrap { padding: 10px 12px 6px; }
+
+.fmt-input {
+  width: 100%;
+  background: #070908;
+  border: 1px solid $border;
+  border-radius: 2px;
+  color: $text;
+  font-family: $font-mono;
+  font-size: 13px;
+  padding: 7px 10px;
+  outline: none;
+  transition: border-color .15s, color .15s;
+  caret-color: $green;
+
+  &:focus   { border-color: $green-dim; }
+  &.error   { border-color: #ff5f57 !important; color: #ff5f57; }
+  &[readonly] { color: $text-dim; cursor: default; }
+}
+
+.fmt-meta {
+  padding: 4px 12px 10px;
+  font-size: 11px;
+  color: $text-muted;
+  line-height: 1.6;
+
+  span { color: $text-dim; }
+}
+
+// ── Float visual breakdown ─────────────────────────────
+.float-breakdown {
+  border-top: 1px solid $border;
+  padding: 8px 12px 10px;
+}
+
+.fb-bits-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.mb {  // mini-bit
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  font-family: $font-mono;
+  font-size: 8px;
+  font-weight: 700;
+  border-radius: 1px;
+  border: 1px solid $border;
+  color: $text-muted;
+  background: #070908;
+
+  &.s1 { color: #ff5f57;  background: rgba(255,95,87,.18);  border-color: #ff5f57;  }
+  &.e1 { color: #febc2e;  background: rgba(254,188,46,.18); border-color: #febc2e;  }
+  &.m1 { color: $green;   background: rgba(98,222,97,.15);  border-color: $green;   }
+
+  &.bit-sign { &:not(.s1) { border-color: rgba(255,95,87,.2); } }
+  &.bit-exp  { &:not(.e1) { border-color: rgba(254,188,46,.2); } }
+  &.bit-mant { &:not(.m1) { border-color: rgba(98,222,97,.12); } }
+}
+
+// gap every 4 bits in mini rows
+.mb:nth-child(4n+1):not(:first-child) { margin-left: 2px; }
+
+.fb-fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.fb-field {
+  .fbl { font-size: 9px; color: $text-muted; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+  .fbv { font-size: 11px; color: $text-dim; word-break: break-all; }
+  .fbv.s { color: #ff5f57; }
+  .fbv.e { color: #febc2e; }
+  .fbv.m { color: $green;  }
+}
+
+// ── ASCII swatch ──────────────────────────────────────
+.ascii-char-display {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
+  background: #070908;
+  border: 1px solid $border;
+  border-radius: 2px;
+  color: $green;
+  margin-top: 4px;
+  font-family: $font-mono;
+}
+
+// ── Color swatch ──────────────────────────────────────
+.color-swatch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 10px;
+  border-top: 1px solid $border;
+}
+
+.swatch-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 2px;
+  border: 1px solid $border;
+  flex-shrink: 0;
+}
+
+.swatch-values {
+  font-size: 11px;
+  color: $text-dim;
+  line-height: 1.7;
+
+  span { color: $text-muted; }
+}
+
+// ── Logic Levels Tool ─────────────────────────────────────────────────────
+
+.ll-ref-link {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: $green-dim;
+  text-decoration: none;
+  letter-spacing: .04em;
+  &:hover { color: $green; text-decoration: underline; }
+}
+
+.ll-section-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: $text-muted;
+  margin: 28px 0 12px;
+}
+
+// Controls
+.ll-controls {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 4px;
+  padding: 16px 20px;
+  margin-bottom: 8px;
+}
+
+.ll-control-group { margin-bottom: 16px; }
+
+.ll-sliders { display: flex; flex-direction: column; gap: 10px; }
+
+.ll-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ll-label {
+  font-size: 11px;
+  color: $text-muted;
+  width: 160px;
+  flex-shrink: 0;
+  letter-spacing: .04em;
+}
+
+.ll-range {
+  flex: 1;
+  min-width: 120px;
+  accent-color: $green;
+  height: 4px;
+  cursor: pointer;
+}
+
+.ll-num-input {
+  width: 64px;
+  background: #070908;
+  border: 1px solid $border;
+  border-radius: 2px;
+  color: $text;
+  font-family: $font-mono;
+  font-size: 12px;
+  padding: 4px 8px;
+  outline: none;
+  text-align: right;
+  caret-color: $green;
+  &:focus { border-color: $green-dim; }
+}
+
+.ll-unit {
+  font-size: 11px;
+  color: $text-muted;
+  width: 30px;
+}
+
+// Panels
+.ll-panels {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: start;
+  @media (max-width: 680px) { grid-template-columns: 1fr; }
+}
+
+.ll-vol-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ll-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: #0f120f;
+  border-bottom: 1px solid $border;
+}
+
+.ll-card-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: $text-muted;
+}
+
+.ll-vdd-badge {
+  font-size: 11px;
+  font-family: $font-mono;
+  color: $green;
+  letter-spacing: .06em;
+}
+
+.ll-voltage-diagram {
+  padding: 12px 16px;
+  svg { display: block; }
+}
+
+// Metric cards grid
+.ll-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  @media (max-width: 480px) { grid-template-columns: repeat(2, 1fr); }
+}
+
+.ll-metric-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 4px;
+  padding: 10px 14px;
+
+  &.accent-h { border-color: rgba(98,222,97,.2); }
+  &.accent-l { border-color: rgba(91,155,213,.2); }
+}
+
+.ll-metric-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: $text-muted;
+  margin-bottom: 4px;
+}
+
+.ll-metric-val {
+  font-size: 16px;
+  font-family: $font-mono;
+  color: $green;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  margin-bottom: 3px;
+}
+
+.ll-metric-desc {
+  font-size: 10px;
+  color: $text-muted;
+}
+
+// Timing
+.ll-timing-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  @media (max-width: 680px) { grid-template-columns: 1fr; }
+}
+
+.ll-timing-metrics, .ll-power-metrics {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 4px;
+  padding: 14px 16px;
+}
+
+.ll-timing-visual, .ll-power-bar-wrap {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 4px;
+  padding: 14px 16px;
+}
+
+.ll-trow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(30,42,30,.6);
+  &:last-child { border-bottom: none; }
+}
+
+.ll-tlabel {
+  font-size: 11px;
+  color: $text-muted;
+}
+
+.ll-tval {
+  font-family: $font-mono;
+  font-size: 12px;
+  color: $text-dim;
+  &.accent { color: $green; font-weight: 700; }
+}
+
+.ll-timing-bar-label, .ll-power-bar-label {
+  font-size: 10px;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 10px;
+}
+
+.ll-timing-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ll-timing-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #070908;
+  border: 1px solid $border;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ll-timing-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width .25s, background .25s;
+}
+
+.ll-timing-pct {
+  font-size: 11px;
+  font-family: $font-mono;
+  min-width: 70px;
+  text-align: right;
+}
+
+.ll-waveform {
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+}
+
+// Power
+.ll-power-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  @media (max-width: 680px) { grid-template-columns: 1fr; }
+}
+
+.ll-split-bar {
+  display: flex;
+  height: 16px;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.ll-split-dyn  { background: $green;  transition: width .25s; }
+.ll-split-leak { background: #ff5f57; transition: width .25s; }
+
+.ll-split-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 10px;
+}
+
+.ll-leg-dyn  { color: $green-dim; }
+.ll-leg-leak { color: rgba(255,95,87,.7); }
+
+// Physical params grid
+.ll-phys-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ll-phys-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 4px;
+  padding: 10px 14px;
+}
+
+.ll-phys-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: $text-muted;
+  margin-bottom: 4px;
+}
+
+.ll-phys-val {
+  font-size: 13px;
+  font-family: $font-mono;
+  color: $text-dim;
+  font-weight: 600;
+}
+
+// Node comparison table
+.ll-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 16px;
+}
+
+.ll-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: $font-mono;
+
+  th {
+    background: #0f120f;
+    color: $text-muted;
+    font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid $border;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 7px 12px;
+    color: $text-dim;
+    border-bottom: 1px solid rgba(30,42,30,.5);
+    white-space: nowrap;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(30,42,30,.4); }
+
+  tr.ll-row-active td {
+    background: rgba(58,138,58,.08);
+    color: $text;
+  }
+  tr.ll-row-active td.ll-td-node { color: $green; }
+}
+
+.ll-td-node {
+  font-weight: 700;
+  color: $text;
+}
+
+.ll-tx-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: 700;
+  letter-spacing: .06em;
+
+  &.ll-tx-planar { color: $text-dim;   background: rgba(108,138,108,.12); border: 1px solid rgba(108,138,108,.2); }
+  &.ll-tx-finfet { color: $blue;       background: rgba(91,155,213,.08);  border: 1px solid rgba(91,155,213,.2);  }
+  &.ll-tx-gaa    { color: $green;      background: rgba(98,222,97,.08);   border: 1px solid $green-muted;         }
+}
+
+// ── Gate Type Critical Path section ──────────────────────────────────────
+
+.ll-gt-wrap { margin-bottom: 4px; }
+
+.ll-gt-panels {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+  align-items: start;
+  margin-top: 12px;
+  @media (max-width: 780px) { grid-template-columns: 1fr; }
+}
+
+.ll-gt-card {
+  background: $bg-card;
+  border: 1px solid $green-muted;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ll-gt-card-header {
+  background: #0f120f;
+  border-bottom: 1px solid $border;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ll-gt-name {
+  font-size: 16px;
+  font-family: $font-mono;
+  font-weight: 700;
+  color: $green;
+  letter-spacing: .04em;
+}
+
+.ll-gt-full {
+  font-size: 10px;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.ll-gt-fn {
+  font-size: 12px;
+  font-family: $font-mono;
+  color: #febc2e;
+  background: rgba(254,188,46,.06);
+  border: 1px solid rgba(254,188,46,.15);
+  border-radius: 2px;
+  padding: 2px 6px;
+  display: inline-block;
+  margin-top: 2px;
+}
+
+.ll-gt-rows { padding: 4px 14px 10px; }
+
+.ll-gt-table-wrap {
+  overflow-x: auto;
+  tr { cursor: pointer; }
+}
+
+.col-green { color: $green !important; font-weight: 600; }
+.col-red   { color: #ff5f57 !important; }
+
+// ── Gate Count section ────────────────────────────────────────────────────
+
+.ll-gate-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  @media (max-width: 680px) { grid-template-columns: 1fr; }
+}
+
+.ll-gate-metrics {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 4px;
+  padding: 14px 16px;
+}
+
+.ll-gate-visual {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 4px;
+  padding: 14px 16px;
+}
+
+.ll-gate-chart-label {
+  font-size: 10px;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 12px;
+}
+
+.ll-gbar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ll-gbar-label {
+  font-size: 10px;
+  color: $text-muted;
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.ll-gbar-track {
+  flex: 1;
+  height: 8px;
+  background: #070908;
+  border: 1px solid $border;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ll-gbar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width .25s;
+}
+
+.ll-gbar-active { background: $green; }
+.ll-gbar-idle   { background: $border-bright; }
+.ll-gbar-crit   { background: #febc2e; }
+
+.ll-gbar-pct {
+  font-size: 10px;
+  font-family: $font-mono;
+  color: $text-dim;
+  min-width: 56px;
+  text-align: right;
+}
+
+.ll-gate-formula {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid $border;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ll-gf-line {
+  font-size: 10px;
+  font-family: $font-mono;
+  color: $text-muted;
+  letter-spacing: .02em;
+
+  sub { font-size: 8px; }
+}
+
+.active-preset {
+  color: $green !important;
+  border-color: $green-dim !important;
+  background: rgba(98,222,97,.06) !important;
+}

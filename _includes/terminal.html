@@ -1,0 +1,927 @@
+<!-- ── Popup Terminal ─────────────────────────────────────────────── -->
+<div id="term-toggle-btn" title="Terminal  Ctrl+`">▶_  terminal</div>
+
+<div id="popup-terminal" class="term-hidden">
+  <div class="term-titlebar" id="term-drag">
+    <div class="term-dots">
+      <span class="term-dot td-red"  id="td-close" title="Close">✕</span>
+      <span class="term-dot td-yel"  id="td-min"   title="Minimise">−</span>
+      <span class="term-dot td-grn"                title="Always on top"></span>
+    </div>
+    <span class="term-title-str">scimos — terminal</span>
+    <span class="term-kbd-hint">Ctrl+` toggle</span>
+  </div>
+  <div class="term-body">
+    <div class="term-output" id="term-out"></div>
+    <div id="term-completions"></div>
+    <div class="term-input-row">
+      <span class="term-prompt-str" id="term-ps1"></span>
+      <input id="term-in" class="term-input" type="text" autocomplete="off" spellcheck="false">
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+// ── Site tree injected by Jekyll Liquid ───────────────────────────────────
+const TREE = {};
+{% for cat in site.data.nav %}
+TREE["{{ cat.slug }}"] = {
+  label: "{{ cat.label }}",
+  entries: {
+    {% for entry in cat.entries %}
+    "{{ entry.slug }}": {
+      title: "{{ entry.title }}",
+      href: "{% if entry.href %}{{ entry.href }}{% else %}/{{ cat.slug }}/{{ entry.slug }}/{% endif %}"
+    }{% unless forloop.last %},{% endunless %}
+    {% endfor %}
+  }
+};
+{% endfor %}
+
+const TOTAL_PAGES = {{ site.glossary.size }};
+
+// ── State ─────────────────────────────────────────────────────────────────
+let cwd      = '/';
+let hist     = [];
+let histIdx  = -1;
+let compList = [];
+let compIdx  = -1;
+let dragging = false, dragX = 0, dragY = 0;
+
+// ── DOM refs ──────────────────────────────────────────────────────────────
+const term   = document.getElementById('popup-terminal');
+const out    = document.getElementById('term-out');
+const inp    = document.getElementById('term-in');
+const ps1    = document.getElementById('term-ps1');
+const comp   = document.getElementById('term-completions');
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function print(html) {
+  const d = document.createElement('div');
+  d.innerHTML = html;
+  out.appendChild(d);
+  out.scrollTop = out.scrollHeight;
+}
+
+function println(text, cls = '') {
+  print(cls ? `<span class="${cls}">${esc(text)}</span>` : esc(text));
+}
+
+function printCmd(cmd) {
+  print(`<span class="tdim">${renderPS1Raw()} </span><span class="tcmd">${esc(cmd)}</span>`);
+}
+
+function renderPS1Raw() {
+  return `vipin@scimos:<span class="tp-c">${cwd}</span><span class="tp-s">$</span>`;
+}
+
+function renderPS1() {
+  ps1.innerHTML = `<span class="tp-u">vipin</span><span class="tp-s">@scimos:</span><span class="tp-c">${cwd}</span><span class="tp-s">$ </span>`;
+}
+
+function sep(char = '─', len = 62) {
+  return `<span class="tsep">${char.repeat(len)}</span>`;
+}
+
+// ── Path resolution ───────────────────────────────────────────────────────
+function normPath(p) {
+  if (!p || p === '~') return '/';
+  if (!p.startsWith('/')) {
+    p = (cwd === '/' ? '' : cwd) + '/' + p;
+  }
+  // Resolve .. and .
+  const parts = [];
+  for (const seg of p.split('/')) {
+    if (seg === '' || seg === '.') continue;
+    if (seg === '..') parts.pop();
+    else parts.push(seg);
+  }
+  return '/' + parts.join('/');
+}
+
+function pathToUrl(path) {
+  const p = normPath(path);
+  const segs = p.split('/').filter(Boolean);
+  if (segs.length === 0) return null; // root has no single URL
+  const cat = TREE[segs[0]];
+  if (!cat) return null;
+  if (segs.length === 1) return null; // category dir, no page
+  const entry = cat.entries[segs[1]];
+  return entry ? entry.href : null;
+}
+
+function listDir(path) {
+  const p = normPath(path);
+  const segs = p.split('/').filter(Boolean);
+  if (segs.length === 0) {
+    // root
+    return Object.entries(TREE).map(([slug, cat]) => ({
+      name: slug + '/',
+      type: 'dir',
+      label: cat.label,
+    }));
+  }
+  const cat = TREE[segs[0]];
+  if (!cat) return null;
+  if (segs.length === 1) {
+    return Object.entries(cat.entries).map(([slug, e]) => ({
+      name: slug,
+      type: 'file',
+      label: e.title,
+      href: e.href,
+    }));
+  }
+  return null;
+}
+
+// ── HTML → terminal text converter ───────────────────────────────────────
+function nodeToLines(el) {
+  const lines = [];
+  function walk(node) {
+    if (node.nodeType === 3) return esc(node.textContent);
+    if (node.nodeType !== 1) return '';
+    const tag = node.tagName.toLowerCase();
+    if (['script','style','nav','aside'].includes(tag)) return '';
+    const kids = () => Array.from(node.childNodes).map(walk).join('');
+    switch (tag) {
+      case 'h1': lines.push(''); lines.push(`<span class="th1"># ${esc(node.textContent.trim())}</span>`); lines.push(sep()); return '';
+      case 'h2': lines.push(''); lines.push(`<span class="th2">## ${esc(node.textContent.trim())}</span>`); return '';
+      case 'h3': lines.push(`<span class="th2">### ${esc(node.textContent.trim())}</span>`); return '';
+      case 'h4': lines.push(`<span class="tdim">#### ${esc(node.textContent.trim())}</span>`); return '';
+      case 'hr': lines.push(sep()); return '';
+      case 'br': lines.push(''); return '';
+      case 'p': {
+        const t = Array.from(node.childNodes).map(n => {
+          if (n.nodeType === 3) return esc(n.textContent);
+          const nt = n.tagName?.toLowerCase();
+          if (nt === 'code') return `<span class="tcode">${esc(n.textContent)}</span>`;
+          if (nt === 'strong' || nt === 'b') return `<b>${esc(n.textContent)}</b>`;
+          if (nt === 'em' || nt === 'i') return `<i>${esc(n.textContent)}</i>`;
+          if (nt === 'a') return `<span class="tlink" onclick="window.location='${n.href}'">${esc(n.textContent)}</span>`;
+          return esc(n.textContent);
+        }).join('');
+        if (t.trim()) lines.push(t);
+        return '';
+      }
+      case 'pre': {
+        lines.push(`<span class="tdim">┌──────────────────────────────────────────────────────</span>`);
+        node.textContent.split('\n').forEach(l => lines.push(`<span class="tcode">  ${esc(l)}</span>`));
+        lines.push(`<span class="tdim">└──────────────────────────────────────────────────────</span>`);
+        return '';
+      }
+      case 'blockquote': {
+        node.textContent.trim().split('\n').forEach(l =>
+          lines.push(`<span class="twarn">  ▌ ${esc(l.trim())}</span>`));
+        return '';
+      }
+      case 'li': {
+        lines.push(`  <span class="tdim">•</span> ${esc(node.textContent.trim())}`);
+        return '';
+      }
+      case 'table': {
+        const rows = Array.from(node.querySelectorAll('tr'));
+        rows.forEach((row, i) => {
+          const cells = Array.from(row.querySelectorAll('th,td'))
+            .map(c => c.textContent.trim().substring(0,22).padEnd(22));
+          const line = cells.join(' │ ');
+          lines.push(i === 0 ? `<b>${line}</b>` : line);
+          if (i === 0) lines.push(sep('─', Math.min(line.length, 80)));
+        });
+        return '';
+      }
+      default: {
+        const inner = kids();
+        if (inner.trim()) lines.push(inner);
+        return '';
+      }
+    }
+  }
+  walk(el);
+  return lines.filter((l, i) => !(l === '' && lines[i-1] === '')); // collapse blank lines
+}
+
+// ── Commands ──────────────────────────────────────────────────────────────
+
+function cmdLs(args) {
+  const path = args[0] || cwd;
+  const items = listDir(path);
+  if (items === null) {
+    println(`ls: ${path}: No such directory`, 'terr');
+    return;
+  }
+  if (items.length === 0) { println('(empty)', 'tdim'); return; }
+  items.forEach(it => {
+    if (it.type === 'dir')
+      print(`<span class="tdir">drwxr-xr-x  ${it.name}</span>  <span class="tdim"># ${it.label}</span>`);
+    else
+      print(`<span class="tfile">-rw-r--r--  ${it.name.padEnd(32)}</span><span class="tdim">${it.label}</span>`);
+  });
+}
+
+function cmdCd(args) {
+  const target = args[0] || '~';
+  const p = normPath(target);
+  if (p === '/') { cwd = '/'; renderPS1(); return; }
+  const segs = p.split('/').filter(Boolean);
+  if (!TREE[segs[0]]) { println(`cd: ${target}: No such directory`, 'terr'); return; }
+  if (segs.length >= 2) {
+    if (!TREE[segs[0]].entries[segs[1]]) { println(`cd: ${target}: No such directory`, 'terr'); return; }
+    // Can't cd into a file — but allow it as a concept
+  }
+  cwd = '/' + segs.join('/');
+  renderPS1();
+}
+
+function cmdPwd() { println(cwd); }
+
+function cmdTree(args) {
+  const path = normPath(args[0] || '/');
+  const segs = path.split('/').filter(Boolean);
+  if (segs.length === 0) {
+    print(`<span class="tgb">.</span>`);
+    const cats = Object.entries(TREE);
+    cats.forEach(([slug, cat], ci) => {
+      const last = ci === cats.length - 1;
+      print(`${last?'└─':'├─'} <span class="tdir">${slug}/</span>  <span class="tdim">${cat.label}</span>`);
+      const entries = Object.entries(cat.entries);
+      entries.forEach(([eSlug, e], ei) => {
+        const elast = ei === entries.length - 1;
+        print(`${last?'   ':'│  '}${elast?'└─':'├─'} <span class="tfile">${eSlug}</span>  <span class="tdim">${e.title}</span>`);
+      });
+    });
+  } else {
+    const cat = TREE[segs[0]];
+    if (!cat) { println(`tree: ${path}: No such directory`, 'terr'); return; }
+    print(`<span class="tgb">${segs[0]}/</span>`);
+    const entries = Object.entries(cat.entries);
+    entries.forEach(([slug, e], i) => {
+      const last = i === entries.length - 1;
+      print(`${last?'└─':'├─'} <span class="tfile">${slug}</span>  <span class="tdim">${e.title}</span>`);
+    });
+  }
+}
+
+async function cmdCat(args) {
+  const path = args[0];
+  if (!path) { println('usage: cat <path>', 'twarn'); return; }
+  const url = pathToUrl(path);
+  if (!url) { println(`cat: ${path}: No such file`, 'terr'); return; }
+  print(`<span class="tdim">→ </span><span class="tg">${esc(url)}</span>`);
+  setTimeout(() => { window.location.href = url; }, 200);
+}
+
+async function cmdLess(args) {
+  const path = args[0];
+  if (!path) { println('usage: less <path>', 'twarn'); return; }
+  const url = pathToUrl(path);
+  if (!url) { println(`less: ${path}: No such file`, 'terr'); return; }
+  const loading = document.createElement('div');
+  loading.innerHTML = `<span class="tdim">fetching ${url}…</span>`;
+  out.appendChild(loading);
+  out.scrollTop = out.scrollHeight;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(r.status);
+    const html = await r.text();
+    out.removeChild(loading);
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const prose = doc.querySelector('.entry-prose');
+    const toolPage = doc.querySelector('.tool-page');
+    if (prose) {
+      nodeToLines(prose).forEach(l => print(l));
+    } else if (toolPage) {
+      const h1 = toolPage.querySelector('h1');
+      print(`<span class="th1">${h1 ? esc(h1.textContent) : path}</span>`);
+      println('[interactive tool — use cat or open to navigate there]', 'twarn');
+      const desc = toolPage.querySelector('p');
+      if (desc) print(esc(desc.textContent));
+    } else {
+      println('(no readable content found)', 'tdim');
+    }
+  } catch(e) {
+    try { out.removeChild(loading); } catch(_) {}
+    println(`less: ${path}: ${e.message}`, 'terr');
+  }
+}
+
+async function cmdHead(args) {
+  let n = 10, path;
+  if (args[0] === '-n') { n = parseInt(args[1]) || 10; path = args[2]; }
+  else path = args[0];
+  if (!path) { println('usage: head [-n N] <path>', 'twarn'); return; }
+  const url = pathToUrl(path);
+  if (!url) { println(`head: ${path}: No such file`, 'terr'); return; }
+  const loading = document.createElement('div');
+  loading.innerHTML = `<span class="tdim">fetching…</span>`;
+  out.appendChild(loading); out.scrollTop = out.scrollHeight;
+  try {
+    const r = await fetch(url);
+    const html = await r.text();
+    out.removeChild(loading);
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const prose = doc.querySelector('.entry-prose');
+    if (prose) nodeToLines(prose).slice(0, n).forEach(l => print(l));
+    else println('(no content)', 'tdim');
+  } catch(e) {
+    try { out.removeChild(loading); } catch(_) {}
+    println(`head: ${e.message}`, 'terr');
+  }
+}
+
+async function cmdWc(args) {
+  const path = args[0];
+  if (!path) { println('usage: wc <path>', 'twarn'); return; }
+  const url = pathToUrl(path);
+  if (!url) { println(`wc: ${path}: No such file`, 'terr'); return; }
+  try {
+    const r = await fetch(url);
+    const html = await r.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const prose = doc.querySelector('.entry-prose');
+    const text = prose ? prose.innerText : '';
+    const lines = text.split('\n').length;
+    const words = text.trim().split(/\s+/).filter(Boolean).length;
+    const chars = text.length;
+    print(`  <span class="tgb">${String(lines).padStart(6)}</span>` +
+          `  <span class="tgb">${String(words).padStart(6)}</span>` +
+          `  <span class="tgb">${String(chars).padStart(7)}</span>` +
+          `  <span class="tfile">${path}</span>`);
+  } catch(e) { println(`wc: ${e.message}`, 'terr'); }
+}
+
+async function cmdGrep(args) {
+  // grep [-r] [-i] <pattern> [path]
+  let recursive = false, ignoreCase = false, pattern, path;
+  const remaining = [];
+  for (const a of args) {
+    if (a === '-r' || a === '-R') recursive = true;
+    else if (a === '-i') ignoreCase = true;
+    else if (a === '-ri' || a === '-ir') { recursive = true; ignoreCase = true; }
+    else remaining.push(a);
+  }
+  pattern = remaining[0];
+  path    = remaining[1];
+  if (!pattern) { println('usage: grep [-r] [-i] <pattern> [path]', 'twarn'); return; }
+
+  const flags = ignoreCase ? 'gi' : 'g';
+  let re;
+  try { re = new RegExp(pattern, flags); } catch(e) { println(`grep: invalid pattern: ${e.message}`, 'terr'); return; }
+
+  const targets = [];
+  if (recursive || !path) {
+    for (const [catSlug, cat] of Object.entries(TREE))
+      for (const [eSlug, e] of Object.entries(cat.entries))
+        targets.push({ label: `${catSlug}/${eSlug}`, url: e.href });
+  } else {
+    const url = pathToUrl(path);
+    if (url) targets.push({ label: path, url });
+    else { println(`grep: ${path}: No such file`, 'terr'); return; }
+  }
+
+  print(`<span class="tdim">searching ${targets.length} page(s) for <span class="tcode">${esc(pattern)}</span>…</span>`);
+  let totalMatches = 0;
+
+  for (const { label, url } of targets) {
+    try {
+      const r = await fetch(url);
+      const html = await r.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const prose = doc.querySelector('.entry-prose, .tool-page');
+      if (!prose) continue;
+      const text = prose.innerText;
+      const lines = text.split('\n');
+      const hits = [];
+      lines.forEach((line, i) => {
+        if (re.test(line)) {
+          re.lastIndex = 0;
+          const highlighted = line.replace(re, m => `<span class="thi">${esc(m)}</span>`);
+          hits.push(`  <span class="tdim">${String(i+1).padStart(4)}:</span> ${highlighted}`);
+        }
+        re.lastIndex = 0;
+      });
+      if (hits.length) {
+        print(`<span class="tgb">${esc(label)}</span><span class="tdim"> (${hits.length} match${hits.length>1?'es':''})</span>`);
+        hits.forEach(h => print(h));
+        totalMatches += hits.length;
+      }
+    } catch(e) { println(`  ${label}: fetch failed`, 'tdim'); }
+  }
+  if (totalMatches === 0) println(`(no matches for "${pattern}")`, 'tdim');
+  else print(sep());
+  print(`<span class="tdim">${totalMatches} match${totalMatches!==1?'es':''} across ${targets.length} page(s)</span>`);
+}
+
+function cmdFind(args) {
+  // find [path] [-name pattern]
+  let nameGlob = null, searchPath = '/';
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '-name') { nameGlob = args[++i]; }
+    else if (!args[i].startsWith('-')) searchPath = args[i];
+  }
+  const re = nameGlob ? new RegExp(nameGlob.replace(/\*/g,'.*').replace(/\?/g,'.'), 'i') : null;
+  let found = 0;
+  for (const [catSlug, cat] of Object.entries(TREE)) {
+    for (const [eSlug, e] of Object.entries(cat.entries)) {
+      const fullPath = `${catSlug}/${eSlug}`;
+      if (re && !re.test(eSlug) && !re.test(e.title)) continue;
+      print(`<span class="tfile">./${fullPath}</span>  <span class="tdim">${e.title}</span>`);
+      found++;
+    }
+  }
+  if (found === 0) println('(no matches)', 'tdim');
+  else print(`<span class="tdim">${found} file${found!==1?'s':''}</span>`);
+}
+
+function cmdOpen(args) {
+  const path = args[0];
+  if (!path) { println('usage: open <path>', 'twarn'); return; }
+  const url = pathToUrl(path);
+  if (!url) {
+    // Try direct URL
+    const p = normPath(path);
+    const segs = p.split('/').filter(Boolean);
+    if (segs.length === 1 && TREE[segs[0]]) {
+      println(`${segs[0]}/ is a directory — open a specific entry`, 'twarn');
+      return;
+    }
+    println(`open: ${path}: No such page`, 'terr'); return;
+  }
+  println(`→ navigating to ${url}`, 'tg');
+  setTimeout(() => { window.location.href = url; }, 300);
+}
+
+function cmdHistory() {
+  hist.forEach((cmd, i) =>
+    print(`  <span class="tdim">${String(hist.length - i).padStart(4)}</span>  ${esc(cmd)}`));
+}
+
+function cmdClear() { out.innerHTML = ''; }
+
+function cmdEcho(args) { print(esc(args.join(' '))); }
+
+function cmdRev(args) {
+  const t = args.join(' ');
+  print(esc([...t].reverse().join('')));
+}
+
+function cmdFactor(args) {
+  let n = parseInt(args[0]);
+  if (!n || n < 2) { println('usage: factor <integer ≥ 2>', 'twarn'); return; }
+  const factors = [];
+  for (let d = 2; d * d <= n; d++) { while (n % d === 0) { factors.push(d); n /= d; } }
+  if (n > 1) factors.push(n);
+  print(`<span class="tgb">${args[0]}</span><span class="tdim">:</span> ${factors.map(f=>`<span class="tg">${f}</span>`).join(' × ')}`);
+}
+
+function cmdBanner(args) {
+  const msg = args.join(' ').toUpperCase().substring(0, 12);
+  if (!msg) { println('usage: banner <text>', 'twarn'); return; }
+  const chars = {
+    ' ': ['   ','   ','   ','   ','   '],
+    'A': [' ██',' █ █',' ████',' █  █',' █  █'],
+    'B': ['████',' █  █','████',' █  █','████'],
+    'C': [' ███','█   ',' █  ',' █  ',' ███'],
+    'D': ['███ ',' █  █',' █  █',' █  █','███ '],
+    'E': ['████','█   ','███ ','█   ','████'],
+    'F': ['████','█   ','███ ','█   ','█   '],
+    'G': [' ███','█   ','█ ██','█  █',' ███'],
+    'H': ['█  █','█  █','████','█  █','█  █'],
+    'I': ['███',' █ ',' █ ',' █ ','███'],
+    'M': ['█   █','██ ██','█ █ █','█   █','█   █'],
+    'N': ['█  █','██ █','█ ██','█  █','█  █'],
+    'O': [' ██ ','█  █','█  █','█  █',' ██ '],
+    'P': ['███ ','█  █','███ ','█   ','█   '],
+    'R': ['███ ','█  █','███ ','█ █ ','█  █'],
+    'S': [' ███','█   ',' ██ ','   █','███ '],
+    'T': ['████',' █  ',' █  ',' █  ',' █  '],
+    'U': ['█  █','█  █','█  █','█  █',' ██ '],
+    'X': ['█   █',' █ █ ','  █  ',' █ █ ','█   █'],
+    'Y': ['█   █',' █ █ ','  █  ','  █  ','  █  '],
+    '0': [' ██ ','█  █','█  █','█  █',' ██ '],
+    '1': [' ██ ','  █ ','  █ ','  █ ','████'],
+  };
+  const rows = ['','','','',''];
+  for (const ch of msg) {
+    const g = chars[ch] || chars['X'];
+    for (let r = 0; r < 5; r++) rows[r] += (g[r]||'   ') + '  ';
+  }
+  rows.forEach(r => print(`<span class="tg">${esc(r)}</span>`));
+}
+
+function cmdCowsay(args) {
+  const msg = args.join(' ') || 'Moo!';
+  const w = msg.length + 2;
+  const line = '_'.repeat(w);
+  print(`<span class="tdim"> ${line}</span>`);
+  print(`<span class="tdim">&lt; </span><span class="tgb">${esc(msg)}</span><span class="tdim"> &gt;</span>`);
+  print(`<span class="tdim"> ${'-'.repeat(w)}</span>`);
+  print(`<span class="tg">        \\   ^__^</span>`);
+  print(`<span class="tg">         \\  (oo)\\_______</span>`);
+  print(`<span class="tg">            (__)\\       )\\/\\</span>`);
+  print(`<span class="tg">                ||----w |</span>`);
+  print(`<span class="tg">                ||     ||</span>`);
+}
+
+function cmdDate() {
+  print(`<span class="tg">${new Date().toString()}</span>`);
+}
+
+function cmdUptime() {
+  const s = Math.floor(performance.now() / 1000);
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  print(`<span class="tdim">up</span> <span class="tg">${h}h ${m}m ${sec}s</span> <span class="tdim">— terminal session</span>`);
+}
+
+function cmdWhoami() {
+  print(`<span class="tg">vipin</span>`);
+}
+
+function cmdUname(args) {
+  if (args.includes('-a')) {
+    print(`<span class="tg">SCiMOS 1.0 Jekyll/4.3 x86_64 GNU/Linux  [${navigator.userAgent.split(' ').slice(-1)[0]}]</span>`);
+  } else {
+    print(`<span class="tg">SCiMOS</span>`);
+  }
+}
+
+function cmdNeofetch() {
+  const ua = navigator.userAgent;
+  const os = ua.includes('Mac') ? 'macOS' : ua.includes('Win') ? 'Windows' : 'Linux';
+  const totalEntries = Object.values(TREE).reduce((s, c) => s + Object.keys(c.entries).length, 0);
+  const cats = Object.keys(TREE).length;
+  const lines = [
+    ``,
+    `    <span class="tg">  ██████╗</span>      <span class="tgb">vipin@scimos</span>`,
+    `    <span class="tg"> ██╔════╝</span>      <span class="tsep">────────────────────</span>`,
+    `    <span class="tg"> ███████╗</span>      <span class="tdim">OS:</span>      <span class="tg">SCiMOS v1.0</span>`,
+    `    <span class="tg"> ╚════██║</span>      <span class="tdim">Shell:</span>   <span class="tg">popup-terminal 1.0</span>`,
+    `    <span class="tg"> ███████║</span>      <span class="tdim">Theme:</span>   <span class="tg">terminal-dark #0a0c0a</span>`,
+    `    <span class="tg"> ╚══════╝</span>      <span class="tdim">Font:</span>    <span class="tg">JetBrains Mono 12px</span>`,
+    `                  <span class="tdim">Platform:</span> <span class="tg">${os}</span>`,
+    `                  <span class="tdim">Pages:</span>   <span class="tg">${totalEntries} entries, ${cats} categories</span>`,
+    `                  <span class="tdim">Jekyll:</span>  <span class="tg">4.3 / kramdown / rouge</span>`,
+    ``,
+    `  <span style="background:#ff5f57;color:#ff5f57">███</span><span style="background:#febc2e;color:#febc2e">███</span><span style="background:#28c840;color:#28c840">███</span><span style="background:#62de61;color:#62de61">███</span><span style="background:#5b9bd5;color:#5b9bd5">███</span><span style="background:#b07ad5;color:#b07ad5">███</span>`,
+    ``,
+  ];
+  lines.forEach(l => print(l));
+}
+
+function cmdCal() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  const monthNames = ['January','February','March','April','May','June',
+                      'July','August','September','October','November','December'];
+  const header = monthNames[m] + ' ' + y;
+  print(`<span class="tgb">      ${header.padStart(14 + Math.floor(header.length/2)).padEnd(20)}    </span>`);
+  print(`<span class="tdim">Su  Mo  Tu  We  Th  Fr  Sa</span>`);
+  const first = new Date(y, m, 1).getDay();
+  const days = new Date(y, m+1, 0).getDate();
+  const today = now.getDate();
+  let row = '    '.repeat(first);
+  for (let d = 1; d <= days; d++) {
+    const cell = d === today ? `<span class="tgb">${String(d).padStart(2)}</span>` : String(d).padStart(2);
+    row += cell + '  ';
+    if ((first + d) % 7 === 0) { print(row); row = ''; }
+  }
+  if (row.trim()) print(row);
+}
+
+let matrixInterval = null;
+function cmdMatrix() {
+  if (matrixInterval) { clearInterval(matrixInterval); matrixInterval = null; return; }
+  const chars = '0123456789ABCDEF$#@!%&アイウエオカキク';
+  let frame = 0;
+  matrixInterval = setInterval(() => {
+    if (frame++ > 40) { clearInterval(matrixInterval); matrixInterval = null;
+      println('--- matrix exited ---', 'tdim'); return; }
+    let line = '';
+    for (let i = 0; i < 60; i++) {
+      const c = chars[Math.floor(Math.random() * chars.length)];
+      const a = Math.random();
+      line += `<span style="color:rgba(98,222,97,${a.toFixed(2)})">${c}</span>`;
+    }
+    print(line);
+    out.scrollTop = out.scrollHeight;
+  }, 70);
+}
+
+const FORTUNES = [
+  'The best engineers write code that is easy to delete, not easy to extend.',
+  'FO4 delay: the universal currency of timing budgets.',
+  'It\'s not a bug, it\'s an undocumented feature of the timing closure.',
+  'Someday, with enough transistors, we will run everything in parallel. Today is not that day.',
+  'The gate delay is 11 ps. The meeting to discuss it: 60 minutes.',
+  'NMH = NML = 0.2 × VDD. Noise margins are symmetric. Life is not.',
+  'A pipeline is just a fancy register file with ambition.',
+  'All abstractions are leaky. Some are just better at hiding it.',
+  'Power ∝ CV²f. Every GHz you add, you pay twice in watts.',
+  'The forbidden zone is a metaphor, but also a place on a CMOS transfer curve.',
+  'write verilog. get paid. buy more transistors. repeat.',
+  'Moore\'s law is dead. Long live the packaging engineers.',
+  '"Working as intended" — every flip-flop, every cycle, without exception.',
+  'Amdahl\'s Law doesn\'t care about your feelings.',
+  'A logical effort of 1.0 means you chose an inverter. Boring, but optimal.',
+];
+function cmdFortune() {
+  const f = FORTUNES[Math.floor(Math.random() * FORTUNES.length)];
+  print(sep('-'));
+  print(`  <span class="tg">${esc(f)}</span>`);
+  print(sep('-'));
+}
+
+function cmdPing(args) {
+  const host = args[0] || 'scimos.local';
+  print(`<span class="tdim">PING ${esc(host)} — press Ctrl+C to stop (type another command)</span>`);
+  let seq = 0;
+  const id = setInterval(() => {
+    if (seq++ >= 4) { clearInterval(id); print(`<span class="tdim">--- ${esc(host)} ping statistics ---</span>`);
+      print(`<span class="tg">4 packets transmitted, 4 received, 0% packet loss</span>`); return; }
+    const ms = (Math.random() * 2 + 0.1).toFixed(3);
+    print(`64 bytes from <span class="tg">${esc(host)}</span>: icmp_seq=${seq} ttl=64 time=<span class="tgb">${ms} ms</span>`);
+    out.scrollTop = out.scrollHeight;
+  }, 600);
+}
+
+function cmdSl() {
+  const frames = [
+    `<span class="twarn">      ====        ________                ___________    </span>`,
+    `<span class="twarn">  _D _|  |_______/        \\__I_I_____==__|_________|   </span>`,
+    `<span class="twarn">   |(_)---  |   H\\________/ |   |        =|___ ___|      </span>`,
+    `<span class="twarn">   /     |  |   H  |  |     |   |         ||_| |_||      </span>`,
+    `<span class="twarn">  |      |  |   H  |__--------------------| [___] |      </span>`,
+    `<span class="twarn">  | ________|___H__/__|_____/[][]~\\_______|       |      </span>`,
+    `<span class="twarn">  |/ |   |-----------I_____I [][] []  D   |=======|__    </span>`,
+    `<span class="twarn">__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__  </span>`,
+    `<span class="twarn"> |/-=|___|=   O=====O=====O=====O|_____/~\\___/        </span>`,
+    `<span class="twarn">  \\_/      \\__/  \\__/  \\__/  \\__/      \\_/            </span>`,
+  ];
+  frames.forEach(f => print(f));
+  println('sl: command not found (just kidding)', 'tdim');
+}
+
+function cmdPs() {
+  print(`<span class="tdim">  PID TTY          TIME CMD</span>`);
+  print(`    1 pts/0    00:00:00 <span class="tg">jekyll serve</span>`);
+  print(`    2 pts/0    00:00:01 <span class="tg">popup-terminal</span>`);
+  print(`    3 pts/0    ${String(Math.floor(performance.now()/1000)).padStart(8)}s <span class="tg">session</span>`);
+}
+
+function cmdAlias() {
+  print(`<span class="tg">goto</span>=<span class="tcode">'open'</span>`);
+  print(`<span class="tg">ll</span>=<span class="tcode">'ls -la'</span>`);
+  print(`<span class="tg">..  </span>=<span class="tcode">'cd ..'</span>`);
+  print(`<span class="tg">clr </span>=<span class="tcode">'clear'</span>`);
+}
+
+const MAN = {
+  ls:      'ls [path]\n  List directory contents. Shows categories and entries.',
+  cd:      'cd <path>\n  Change working directory. Use ~ for root.',
+  cat:     'cat <path>\n  Navigate the browser to the given page (like open).',
+  less:    'less <path>\n  Fetch and render page content inside the terminal without navigating.',
+  grep:    'grep [-r] [-i] <pattern> [path]\n  Search for pattern in page(s). -r searches all pages. -i case-insensitive.',
+  find:    'find [path] [-name <glob>]\n  Find pages matching a name pattern.',
+  open:    'open <path>\n  Navigate browser to the given page. Alias: goto.',
+  tree:    'tree [path]\n  Show site structure as an ASCII tree.',
+  head:    'head [-n N] <path>\n  Display first N lines of a page (default 10).',
+  wc:      'wc <path>\n  Word count for a page. Output: lines  words  chars.',
+  fortune: 'fortune\n  Display a random chip-design aphorism.',
+  matrix:  'matrix\n  Enter the matrix. Run again to exit.',
+  neofetch:'neofetch\n  Display system information and site stats.',
+  cal:     'cal\n  Display the current month calendar.',
+  cowsay:  'cowsay <text>\n  Have a cow say something.',
+  factor:  'factor <n>\n  Prime factorisation of an integer.',
+  banner:  'banner <text>\n  Print text in large ASCII letters (A-Z, 0-1).',
+  ping:    'ping <host>\n  Fake ping. Shows 4 packets with synthetic latency.',
+  sl:      'sl\n  Steam locomotive. Punishment for mistyping ls.',
+  rev:     'rev <text>\n  Reverse a string.',
+};
+
+function cmdMan(args) {
+  const cmd = args[0];
+  if (!cmd) { println('usage: man <command>', 'twarn'); return; }
+  const page = MAN[cmd];
+  if (!page) { println(`man: no manual entry for ${cmd}`, 'terr'); return; }
+  print(`<span class="th1">SCIMOS MANUAL — ${cmd.toUpperCase()}</span>`);
+  page.split('\n').forEach(l => {
+    if (l.match(/^\w/)) print(`<span class="tgb">${esc(l)}</span>`);
+    else println(l);
+  });
+}
+
+const HELP_CMDS = [
+  ['Navigation',   ['ls [path]','cd <path>','pwd','tree [path]']],
+  ['Content',      ['cat <path>','less <path>','head [-n N] <path>','wc <path>']],
+  ['Search',       ['grep [-r] [-i] <pat> [path]','find [-name <glob>]']],
+  ['Actions',      ['open <path>','goto <path>']],
+  ['System',       ['date','uptime','whoami','uname [-a]','ps','history','alias','clear','exit']],
+  ['Fun',          ['fortune','matrix','neofetch','cal','cowsay <text>','factor <n>','banner <text>','ping <host>','sl','rev <text>']],
+];
+
+function cmdHelp() {
+  print(`<span class="th1">SCiMOS Terminal — available commands</span>`);
+  print(sep());
+  HELP_CMDS.forEach(([group, cmds]) => {
+    print(`<span class="tgb">${group}</span>`);
+    cmds.forEach(c => print(`  <span class="tg">${c.padEnd(28)}</span><span class="tdim">man ${c.split(' ')[0]}</span>`));
+  });
+  print(sep());
+  print(`<span class="tdim">Tab: complete  ↑↓: history  Ctrl+\`: toggle  Ctrl+L: clear</span>`);
+}
+
+// ── Command dispatcher ────────────────────────────────────────────────────
+async function dispatch(raw) {
+  const trimmed = raw.trim();
+  if (!trimmed) return;
+
+  hist.unshift(trimmed);
+  histIdx = -1;
+  printCmd(trimmed);
+
+  const [cmd, ...args] = trimmed.split(/\s+/);
+
+  switch (cmd.toLowerCase()) {
+    case 'ls': case 'll':       cmdLs(args); break;
+    case 'cd':                  cmdCd(args); break;
+    case 'pwd':                 cmdPwd(); break;
+    case 'tree':                cmdTree(args); break;
+    case 'cat':                  await cmdCat(args); break;
+    case 'less':                 await cmdLess(args); break;
+    case 'head':                await cmdHead(args); break;
+    case 'wc':                  await cmdWc(args); break;
+    case 'grep':                await cmdGrep(args); break;
+    case 'find':                cmdFind(args); break;
+    case 'open': case 'goto':   cmdOpen(args); break;
+    case 'history':             cmdHistory(); break;
+    case 'clear': case 'clr':   cmdClear(); break;
+    case 'echo':                cmdEcho(args); break;
+    case 'rev':                 cmdRev(args); break;
+    case 'date':                cmdDate(); break;
+    case 'uptime':              cmdUptime(); break;
+    case 'whoami':              cmdWhoami(); break;
+    case 'uname':               cmdUname(args); break;
+    case 'ps':                  cmdPs(); break;
+    case 'alias':               cmdAlias(); break;
+    case 'fortune':             cmdFortune(); break;
+    case 'matrix':              cmdMatrix(); break;
+    case 'neofetch':            cmdNeofetch(); break;
+    case 'cal':                 cmdCal(); break;
+    case 'cowsay':              cmdCowsay(args); break;
+    case 'factor':              cmdFactor(args); break;
+    case 'banner':              cmdBanner(args); break;
+    case 'ping':                cmdPing(args); break;
+    case 'sl':                  cmdSl(); break;
+    case 'help': case '?':      cmdHelp(); break;
+    case 'man':                 cmdMan(args); break;
+    case 'exit': case 'quit':
+      println('logout', 'tdim');
+      setTimeout(() => term.classList.add('term-hidden'), 400);
+      break;
+    case '..':                  cmdCd(['..']); break;
+    default:
+      print(`<span class="terr">${esc(cmd)}: command not found</span> <span class="tdim">(type <span class="tg">help</span> for list)</span>`);
+  }
+}
+
+// ── Tab completion ────────────────────────────────────────────────────────
+function getCompletions(partial) {
+  const parts = partial.split(/\s+/);
+  if (parts.length === 1) {
+    // Complete command name
+    const cmds = ['ls','cd','pwd','tree','cat','head','wc','grep','find','open','goto',
+                  'history','clear','echo','rev','date','uptime','whoami','uname','ps',
+                  'alias','fortune','matrix','neofetch','cal','cowsay','factor','banner',
+                  'ping','sl','help','man','exit','..'];
+    return cmds.filter(c => c.startsWith(parts[0]));
+  }
+  // Complete path argument
+  const last = parts[parts.length - 1];
+  const slash = last.lastIndexOf('/');
+  const dir = slash >= 0 ? last.substring(0, slash) : cwd;
+  const stem = slash >= 0 ? last.substring(slash + 1) : last;
+  const items = listDir(dir) || [];
+  return items
+    .filter(it => it.name.startsWith(stem))
+    .map(it => {
+      const prefix = parts.slice(0, -1).join(' ') + ' ';
+      const base = slash >= 0 ? last.substring(0, slash + 1) : '';
+      return prefix + base + it.name;
+    });
+}
+
+function hideCompletions() {
+  comp.style.display = 'none';
+  comp.innerHTML = '';
+  compList = [];
+  compIdx = -1;
+}
+
+function showCompletions(list) {
+  compList = list;
+  compIdx = -1;
+  comp.innerHTML = list.map((c, i) =>
+    `<div class="tc-item" data-i="${i}">${esc(c)}</div>`).join('');
+  comp.querySelectorAll('.tc-item').forEach(el =>
+    el.addEventListener('mousedown', e => {
+      e.preventDefault();
+      inp.value = list[+el.dataset.i];
+      hideCompletions();
+      inp.focus();
+    }));
+
+  // Position above input row
+  const row = inp.closest('.term-input-row');
+  const rowRect = row.getBoundingClientRect();
+  const termRect = term.getBoundingClientRect();
+  comp.style.display = 'block';
+  comp.style.bottom = (termRect.bottom - rowRect.top + 2) + 'px';
+  comp.style.left = '14px';
+}
+
+// ── Input handling ────────────────────────────────────────────────────────
+inp.addEventListener('keydown', async e => {
+  if (e.key === 'Enter') {
+    const val = inp.value;
+    inp.value = '';
+    hideCompletions();
+    await dispatch(val);
+  } else if (e.key === 'Tab') {
+    e.preventDefault();
+    if (compList.length > 0) {
+      compIdx = (compIdx + 1) % compList.length;
+      comp.querySelectorAll('.tc-item').forEach((el, i) =>
+        el.classList.toggle('tc-sel', i === compIdx));
+      inp.value = compList[compIdx];
+    } else {
+      const completions = getCompletions(inp.value);
+      if (completions.length === 1) { inp.value = completions[0]; }
+      else if (completions.length > 1) { showCompletions(completions); }
+    }
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    hideCompletions();
+    if (histIdx < hist.length - 1) inp.value = hist[++histIdx];
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    hideCompletions();
+    if (histIdx > 0) inp.value = hist[--histIdx];
+    else { histIdx = -1; inp.value = ''; }
+  } else if (e.key === 'Escape') {
+    hideCompletions();
+  } else if (e.key === 'l' && e.ctrlKey) {
+    e.preventDefault(); cmdClear();
+  } else {
+    hideCompletions();
+  }
+});
+
+// ── Drag ──────────────────────────────────────────────────────────────────
+document.getElementById('term-drag').addEventListener('mousedown', e => {
+  if (e.target.classList.contains('term-dot')) return;
+  dragging = true;
+  dragX = e.clientX - term.offsetLeft;
+  dragY = e.clientY - term.offsetTop;
+  term.style.right = 'auto';
+  term.style.bottom = 'auto';
+  e.preventDefault();
+});
+document.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  term.style.left = Math.max(0, e.clientX - dragX) + 'px';
+  term.style.top  = Math.max(0, e.clientY - dragY) + 'px';
+});
+document.addEventListener('mouseup', () => { dragging = false; });
+
+// ── Toggle / close / min ──────────────────────────────────────────────────
+document.getElementById('term-toggle-btn').addEventListener('click', () => {
+  term.classList.toggle('term-hidden');
+  if (!term.classList.contains('term-hidden')) { inp.focus(); }
+});
+document.getElementById('td-close').addEventListener('click', () => {
+  term.classList.add('term-hidden');
+});
+document.getElementById('td-min').addEventListener('click', () => {
+  term.classList.toggle('term-min');
+});
+document.addEventListener('keydown', e => {
+  if (e.key === '`' && e.ctrlKey) {
+    e.preventDefault();
+    term.classList.toggle('term-hidden');
+    if (!term.classList.contains('term-hidden')) { inp.focus(); }
+  }
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────
+renderPS1();
+const now = new Date();
+print(`<span class="tg">SCiMOS Terminal</span>  <span class="tdim">—  type <span class="tg">help</span> for commands</span>`);
+print(`<span class="tdim">Last login: ${now.toDateString()} ${now.toTimeString().substring(0,8)}</span>`);
+print(``);
+cmdNeofetch();
+print(``);
+
+})();
+</script>

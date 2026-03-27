@@ -1,0 +1,139 @@
+.home {
+  padding: 40px 48px;
+  max-width: 900px;
+
+  @media (max-width: 768px) { padding: 24px 20px; }
+}
+
+/* ── Terminal window ── */
+.terminal-window {
+  border: 1px solid $border;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 48px;
+  background: $bg-card;
+}
+
+.terminal-bar {
+  background: #1a221a;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid $border;
+}
+
+.dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  &.red    { background: #ff5f57; }
+  &.yellow { background: #febc2e; }
+  &.green  { background: #28c840; }
+}
+
+.terminal-title {
+  margin-left: 8px;
+  font-size: 11px;
+  color: $text-muted;
+  letter-spacing: .05em;
+}
+
+.terminal-body { padding: 20px 24px; }
+
+.t-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.prompt-g  { color: $green;    font-weight: 600; }
+.ps        { color: $text-dim; }
+.pp        { color: $blue; }
+.pd        { color: $text-dim; margin-left: 2px; }
+.cmd-text  { color: $text; }
+
+.output-block { margin: 0 0 20px; padding: 16px 0 8px; }
+
+.title-ascii {
+  overflow-x: auto;
+
+  pre {
+    color: $green;
+    font-size: 9px;
+    line-height: 1.2;
+    margin: 0;
+    font-family: $font-mono;
+    white-space: pre;
+
+    @media (max-width: 768px) { font-size: 6px; }
+  }
+}
+
+.tagline {
+  color: $text-dim;
+  font-size: 13px;
+  margin-top: 12px;
+  font-style: italic;
+}
+
+/* ── Topic grid ── */
+.topic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.topic-card {
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: border-color .2s;
+
+  &:hover { border-color: $border-bright; }
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #0f120f;
+  border-bottom: 1px solid $border;
+
+  .card-icon     { color: $green-dim; font-size: 9px; }
+  .card-category { flex: 1; font-size: 11px; font-weight: 600; color: $text-dim; text-transform: uppercase; letter-spacing: .08em; }
+  .card-count    { font-size: 10px; color: $text-muted; background: $green-muted; padding: 2px 6px; border-radius: 2px; }
+}
+
+.card-entries { list-style: none; padding: 8px 0; }
+
+.card-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: $text-dim;
+  text-decoration: none;
+  transition: color .15s, background .15s;
+
+  .link-arrow { color: $text-muted; font-size: 11px; transition: color .15s; }
+
+  &:hover {
+    color: $green;
+    background: rgba(98, 222, 97, .06);
+    .link-arrow { color: $green-dim; }
+  }
+}
+
+/* ── Footer prompt ── */
+.footer-prompt {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}

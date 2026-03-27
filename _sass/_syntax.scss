@@ -1,0 +1,30 @@
+/* Rouge syntax highlighting — terminal green theme */
+.highlight {
+  background: #070908;
+  border: 1px solid #1e2a1e;
+  border-radius: 4px;
+  margin: 20px 0;
+  overflow-x: auto;
+
+  pre { background: none; border: none; padding: 20px; margin: 0; }
+}
+
+.highlight .c,  .highlight .cm, .highlight .c1, .highlight .cs { color: #3d5a3d; font-style: italic; } // comments
+.highlight .err { color: #ff5f57; }
+.highlight .k,  .highlight .kd, .highlight .kn, .highlight .kp,
+.highlight .kr, .highlight .kt { color: #7eff7d; font-weight: 600; } // keywords
+.highlight .n,  .highlight .na, .highlight .nb, .highlight .nc,
+.highlight .nd, .highlight .ni, .highlight .ne, .highlight .nl,
+.highlight .nn, .highlight .nx { color: #c8d8c8; }                  // names
+.highlight .o,  .highlight .ow { color: #3a8a3a; }                  // operators
+.highlight .p                   { color: #6a8a6a; }                  // punctuation
+.highlight .s,  .highlight .s1, .highlight .s2, .highlight .sb,
+.highlight .sc, .highlight .sd, .highlight .se, .highlight .sh,
+.highlight .si, .highlight .sx, .highlight .sr, .highlight .ss { color: #febc2e; } // strings
+.highlight .m,  .highlight .mf, .highlight .mh, .highlight .mi,
+.highlight .mo, .highlight .il { color: #5b9bd5; }                  // numbers
+.highlight .nf, .highlight .fm { color: #62de61; }                  // function names
+.highlight .nv, .highlight .vc, .highlight .vg, .highlight .vi,
+.highlight .vm { color: #b07ad5; }                                  // variables
+.highlight .gi  { color: #62de61; background: rgba(98,222,97,.08); }
+.highlight .gd  { color: #ff5f57; background: rgba(255,95,87,.08); }
