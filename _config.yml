@@ -1,7 +1,7 @@
 title: SCiMOS
 description: A reference for GPU architecture, CUDA, and deep learning performance.
 baseurl: ""
-url: ""
+url: "https://scimos.github.io"
 
 collections:
   glossary:

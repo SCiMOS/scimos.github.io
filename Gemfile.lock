@@ -159,6 +159,7 @@ PLATFORMS
 DEPENDENCIES
   jekyll (~> 4.3)
   rouge
+  webrick
 
 CHECKSUMS
   addressable (2.8.9) sha256=cc154fcbe689711808a43601dee7b980238ce54368d23e127421753e46895485
